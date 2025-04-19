@@ -9,6 +9,7 @@ from PySide6.QtCore import Signal, Qt
 from ..controls.knob_components import VirtualKnob, ParameterKnob
 from ..controls.button_components import PageButton
 from ...style import Colors
+from ..rytm_gui import RythmContext
 
 
 class ParametersSection(QWidget):
@@ -17,8 +18,9 @@ class ParametersSection(QWidget):
     parameter_changed = Signal(str, int)  # Parameter name, value
     page_selected = Signal(str)  # Page name
     
-    def __init__(self, parent=None):
+    def __init__(self, context: RythmContext, parent=None):
         super().__init__(parent)
+        self.context = context
         self.current_page = "SYNTH"
         self.parameter_knobs = {}
         self.page_buttons = {}

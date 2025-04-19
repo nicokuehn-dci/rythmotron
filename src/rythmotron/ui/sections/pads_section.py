@@ -8,6 +8,7 @@ from PySide6.QtCore import Signal, Qt
 
 from ..controls.pad_components import VirtualPad
 from ...constants import Track, TRACK_COLORS
+from ..rytm_gui import RythmContext
 
 
 class PadsSection(QWidget):
@@ -16,10 +17,10 @@ class PadsSection(QWidget):
     pad_pressed = Signal(Track)
     pad_triggered = Signal(Track, int)  # Track, velocity
     
-    def __init__(self, parent=None):
+    def __init__(self, context: RythmContext, parent=None):
         super().__init__(parent)
+        self.context = context
         self.pads = {}
-        self.current_track = Track.BD
         self.setup_ui()
         
     def setup_ui(self):
@@ -68,7 +69,7 @@ class PadsSection(QWidget):
                 row += 1
                 
         # Set the first pad (BD) as selected initially
-        self.set_current_track(Track.BD)
+        self.set_current_track(self.context.current_track)
         
         layout.addWidget(pad_frame)
         layout.addStretch(1)  # Add stretch to push pads to the top
@@ -80,7 +81,7 @@ class PadsSection(QWidget):
         
     def set_current_track(self, track):
         """Set the currently selected track/pad."""
-        self.current_track = track
+        self.context.current_track = track
         
         # Update visual state of all pads
         for t, pad in self.pads.items():

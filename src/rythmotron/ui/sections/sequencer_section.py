@@ -8,6 +8,7 @@ from PySide6.QtCore import Signal, Qt
 
 from ..controls.button_components import TrigButton
 from ...style import Colors
+from ..rytm_gui import RythmContext
 
 
 class PageIndicator(QFrame):
@@ -33,11 +34,11 @@ class SequencerSection(QWidget):
     scale_changed = Signal(str)  # Scale value
     page_changed = Signal(int)  # Page index
 
-    def __init__(self, parent=None):
+    def __init__(self, context: RythmContext, parent=None):
         super().__init__(parent)
+        self.context = context
         self.step_buttons = {}
         self.page_indicators = []
-        self.current_step = -1
         self.current_page = 0
         self.setup_ui()
 
@@ -118,10 +119,10 @@ class SequencerSection(QWidget):
 
     def set_current_step(self, step):
         """Set the currently playing step."""
-        if step != self.current_step:
-            if 0 <= self.current_step < 16:
-                self.step_buttons[self.current_step].set_current_step(False)
-            self.current_step = step
+        if step != self.context.current_step:
+            if 0 <= self.context.current_step < 16:
+                self.step_buttons[self.context.current_step].set_current_step(False)
+            self.context.current_step = step
             if 0 <= step < 16:
                 self.step_buttons[step].set_current_step(True)
 

@@ -9,6 +9,7 @@ from PySide6.QtGui import QColor, QPainter
 
 # Update the import path to correctly reference style from the parent package
 from ...style import Colors
+from ..rytm_gui import RythmContext
 
 
 class ParameterRow(QWidget):
@@ -54,8 +55,9 @@ class DisplaySection(QWidget):
     
     page_changed = Signal(str)  # Page name
     
-    def __init__(self, parent=None):
+    def __init__(self, context: RythmContext, parent=None):
         super().__init__(parent)
+        self.context = context
         self.current_page = "SYNTH"
         self.parameter_rows = {}
         self.setup_ui()

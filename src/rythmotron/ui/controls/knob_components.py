@@ -11,6 +11,9 @@ from PySide6.QtGui import QPainter, QColor, QPen
 # Update the import path to correctly reference style from the parent package
 from ...style import Colors
 
+# Import RythmContext to consume state
+from ...context import RythmContext
+
 
 class VirtualKnob(QDial):
     """A custom knob control with visual feedback."""

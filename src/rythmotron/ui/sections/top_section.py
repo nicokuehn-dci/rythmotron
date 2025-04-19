@@ -10,6 +10,7 @@ from PySide6.QtGui import QPainter, QColor, QPen
 from ..controls.button_components import TransportButton
 from ..controls.knob_components import VirtualKnob
 from ...style import Colors
+from ..rytm_gui import RythmContext
 
 
 class TopBarSection(QWidget):
@@ -21,8 +22,9 @@ class TopBarSection(QWidget):
     tap_tempo_clicked = Signal()
     volume_changed = Signal(int)
     
-    def __init__(self, parent=None):
+    def __init__(self, context: RythmContext, parent=None):
         super().__init__(parent)
+        self.context = context
         self.setup_ui()
         
     def setup_ui(self):

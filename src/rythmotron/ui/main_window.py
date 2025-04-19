@@ -10,11 +10,11 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QColor, QPainter, QPen, QFont, QFontMetrics
 
-from .models import Project, Kit, Sound, Sample, Pattern, Trig, Track
-from .constants import Track, DEFAULT_BPM, TRACK_COLORS, GRID_SIZE, TRACK_HEIGHT
-from .audio_engine import AudioEngine
-from .style import Colors, StyleSheets
-from .layout_manager import LayoutManager, VirtualPad, TrigButton
+from ..models import Project, Kit, Sound, Sample, Pattern, Trig, Track
+from ..constants import Track, DEFAULT_BPM, TRACK_COLORS, GRID_SIZE, TRACK_HEIGHT
+from ..audio_engine import AudioEngine
+from ..style import Colors, StyleSheets
+from ..layout_manager import LayoutManager, VirtualPad, TrigButton
 
 
 class MainWindow(QMainWindow):
