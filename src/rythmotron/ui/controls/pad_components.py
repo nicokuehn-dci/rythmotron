@@ -12,6 +12,9 @@ from PySide6.QtGui import QPainter, QColor, QPen, QPainterPath
 from ...style import Colors
 from ...constants import Track, TRACK_COLORS
 
+# Import RythmContext to consume state
+from ..rytm_gui import RythmContext
+
 class VirtualPad(QPushButton):
     """A virtual drum pad that can be pressed and show different states."""
     

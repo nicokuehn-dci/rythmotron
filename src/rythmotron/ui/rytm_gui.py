@@ -22,6 +22,49 @@ from .sections.modes_section import ModesSection
 from ..constants import Track
 from ..style import Colors
 
+from PySide6.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
+
+class RythmContext(QObject):
+    current_track_changed = pyqtSignal(Track)
+    is_playing_changed = pyqtSignal(bool)
+    current_step_changed = pyqtSignal(int)
+
+    def __init__(self):
+        super().__init__()
+        self._current_track = Track.BD
+        self._is_playing = False
+        self._current_step = -1
+
+    @property
+    def current_track(self):
+        return self._current_track
+
+    @current_track.setter
+    def current_track(self, value):
+        if self._current_track != value:
+            self._current_track = value
+            self.current_track_changed.emit(value)
+
+    @property
+    def is_playing(self):
+        return self._is_playing
+
+    @is_playing.setter
+    def is_playing(self, value):
+        if self._is_playing != value:
+            self._is_playing = value
+            self.is_playing_changed.emit(value)
+
+    @property
+    def current_step(self):
+        return self._current_step
+
+    @current_step.setter
+    def current_step(self, value):
+        if self._current_step != value:
+            self._current_step = value
+            self.current_step_changed.emit(value)
+
 
 class RythmGUI(QMainWindow):
     """
@@ -35,12 +78,8 @@ class RythmGUI(QMainWindow):
         self.setWindowTitle("RythmoTron")
         self.setMinimumSize(1200, 800)
         
-        # Initialize instance variables
-        self.current_track = Track.BD
-        self.current_parameter_page = "SYNTH"
-        self.is_playing = False
-        self.is_recording = False
-        self.current_step = -1
+        # Initialize RythmContext
+        self.context = RythmContext()
         
         # Set up the main layout and UI components
         self.setup_ui()
@@ -64,7 +103,7 @@ class RythmGUI(QMainWindow):
         # Create UI sections
         
         # Top section (project info, transport, etc.)
-        self.top_section = TopSection()
+        self.top_section = TopSection(self.context)
         self.top_section.play_clicked.connect(self.on_play_pressed)
         self.top_section.stop_clicked.connect(self.on_stop_pressed)
         self.top_section.record_clicked.connect(self.on_record_pressed)
@@ -77,13 +116,13 @@ class RythmGUI(QMainWindow):
         center_section.setSpacing(10)
         
         # Pads section
-        self.pads_section = PadsSection()
+        self.pads_section = PadsSection(self.context)
         self.pads_section.pad_pressed.connect(self.on_pad_pressed)
         self.pads_section.pad_triggered.connect(self.on_pad_triggered)
         center_section.addWidget(self.pads_section)
         
         # Display section
-        self.display_section = DisplaySection()
+        self.display_section = DisplaySection(self.context)
         self.display_section.page_changed.connect(self.on_display_page_changed)
         center_section.addWidget(self.display_section, 1)  # Display takes more space
         
@@ -94,20 +133,20 @@ class RythmGUI(QMainWindow):
         bottom_section.setSpacing(10)
         
         # Modes section
-        self.modes_section = ModesSection()
+        self.modes_section = ModesSection(self.context)
         self.modes_section.mode_toggled.connect(self.on_mode_toggled)
         self.modes_section.track_selected.connect(self.on_track_selected)
         bottom_section.addWidget(self.modes_section)
         
         # Sequencer section
-        self.sequencer_section = SequencerSection()
+        self.sequencer_section = SequencerSection(self.context)
         self.sequencer_section.step_toggled.connect(self.on_step_toggled)
         self.sequencer_section.page_changed.connect(self.on_page_changed)
         self.sequencer_section.scale_changed.connect(self.on_scale_changed)
         bottom_section.addWidget(self.sequencer_section, 1)  # Sequencer takes more space
         
         # Parameters section
-        self.params_section = ParametersSection()
+        self.params_section = ParametersSection(self.context)
         self.params_section.parameter_changed.connect(self.on_parameter_changed)
         self.params_section.page_selected.connect(self.on_parameter_page_selected)
         bottom_section.addWidget(self.params_section)
@@ -148,7 +187,7 @@ class RythmGUI(QMainWindow):
     # Event handlers
     def on_pad_pressed(self, track):
         """Handle drum pad press events"""
-        self.current_track = track
+        self.context.current_track = track
         
         # Update pad visuals in the pad section
         self.pads_section.set_current_track(track)
@@ -203,8 +242,8 @@ class RythmGUI(QMainWindow):
         
     def on_play_pressed(self):
         """Start pattern playback"""
-        self.is_playing = True
-        self.current_step = 0
+        self.context.is_playing = True
+        self.context.current_step = 0
         
         # Update transport controls to show playing state
         self.top_section.set_playing_state(True)
@@ -213,8 +252,8 @@ class RythmGUI(QMainWindow):
         
     def on_stop_pressed(self):
         """Stop pattern playback"""
-        self.is_playing = False
-        self.current_step = -1
+        self.context.is_playing = False
+        self.context.current_step = -1
         
         # Update transport controls to show stopped state
         self.top_section.set_playing_state(False)
@@ -260,23 +299,23 @@ class RythmGUI(QMainWindow):
     def update_ui(self):
         """Update UI elements based on current state"""
         # Update sequencer position if playing
-        if self.is_playing:
+        if self.context.is_playing:
             # Advance current step every 4 timer ticks (adjust for actual tempo)
             self.update_counter = getattr(self, 'update_counter', 0) + 1
             if self.update_counter >= 15:  # About 250ms at 60fps
                 self.update_counter = 0
                 
                 # Advance sequencer
-                self.current_step = (self.current_step + 1) % 16
+                self.context.current_step = (self.context.current_step + 1) % 16
                 
                 # Update current step indicator
-                self.sequencer_section.set_current_step(self.current_step)
+                self.sequencer_section.set_current_step(self.context.current_step)
                 
                 # Trigger pads that have steps
                 # In a real implementation, we would check which tracks have triggers
                 # For now, just trigger the current track
-                if self.sequencer_section.step_buttons[self.current_step].has_trigger:
-                    self.pads_section.trigger_pad(self.current_track, 100)
+                if self.sequencer_section.step_buttons[self.context.current_step].has_trigger:
+                    self.pads_section.trigger_pad(self.context.current_track, 100)
                     
     def update_pad_animations(self):
         """Update pad animations for visual feedback"""

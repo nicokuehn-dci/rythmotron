@@ -10,6 +10,7 @@ from PySide6.QtGui import QPainterPath, QPainter
 from ..controls.button_components import ModeToggleButton, RytmButton, ModeButton
 from ...style import Colors
 from ...constants import Track, TRACK_COLORS
+from ..rytm_gui import RythmContext
 
 
 class TrackButton(ModeButton):
@@ -49,11 +50,11 @@ class ModesSection(QWidget):
     mode_toggled = Signal(str, bool)  # Mode name, is_active
     track_selected = Signal(Track)  # Track
     
-    def __init__(self, parent=None):
+    def __init__(self, context: RythmContext, parent=None):
         super().__init__(parent)
+        self.context = context
         self.mode_buttons = {}
         self.track_buttons = {}
-        self.current_track = Track.BD
         self.setup_ui()
         
     def setup_ui(self):
@@ -172,12 +173,12 @@ class ModesSection(QWidget):
         
     def _on_track_selected(self, track):
         """Handle track selection."""
-        self.current_track = track
+        self.context.current_track = track
         self.track_selected.emit(track)
         
     def set_current_track(self, track):
         """Set the currently selected track."""
-        self.current_track = track
+        self.context.current_track = track
         
     def set_mode(self, mode_name, active):
         """Set a mode button state."""

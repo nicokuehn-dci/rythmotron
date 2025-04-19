@@ -10,3 +10,6 @@ from . import pads_section
 from . import parameters_section
 from . import sequencer_section
 from . import top_section
+
+# Import RythmContext to consume state
+from ..rytm_gui import RythmContext
