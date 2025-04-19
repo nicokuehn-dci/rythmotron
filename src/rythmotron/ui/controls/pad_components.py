@@ -13,7 +13,7 @@ from ...style import Colors
 from ...constants import Track, TRACK_COLORS
 
 # Import RythmContext to consume state
-from ..rytm_gui import RythmContext
+from ...utils.context import RythmContext
 
 class VirtualPad(QPushButton):
     """A virtual drum pad that can be pressed and show different states."""

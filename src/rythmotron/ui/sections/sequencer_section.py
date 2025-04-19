@@ -8,7 +8,7 @@ from PySide6.QtCore import Signal, Qt
 
 from ..controls.button_components import TrigButton
 from ...style import Colors
-from ..rytm_gui import RythmContext
+from ...utils.context import RythmContext
 
 
 class PageIndicator(QFrame):

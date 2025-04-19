@@ -27,11 +27,23 @@ error_exit() {
     exit 1
 }
 
-# --- Get Script Directory ---
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-PROJECT_DIR=$( cd -- "$SCRIPT_DIR/.." &> /dev/null && pwd )  # Parent of scripts directory
+# --- Get Project Directory (absolute path) ---
+PROJECT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$PROJECT_DIR" || error_exit "Could not change to project directory: $PROJECT_DIR"
-info "Running in project directory: $PWD"
+info "Running in directory: $PROJECT_DIR"
+
+# --- Step 1: Set DISPLAY Environment Variable --- 
+info "Step 1: Setting DISPLAY environment variable to :0.0"
+export DISPLAY=":0.0"
+info "DISPLAY environment variable is set to: $DISPLAY"
+
+# --- Step 2: Allow X11 Connections ---
+info "Step 2: Allowing X11 connections"
+xhost +local: >/dev/null 2>&1 || warn "Failed to run xhost +local: (This is okay if not running in a graphical environment)"
+
+echo ""
+echo "🖥️  GUI will be shown on display server: $DISPLAY"
+echo ""
 
 # --- Check Python Version ---
 info "Checking Python version..."
@@ -128,13 +140,49 @@ if [ $? -ne 0 ]; then
     error_exit "Failed to install package in development mode."
 fi
 
-# --- Run the Application ---
-info "Starting $SCRIPT_NAME..."
-python -m rythmotron.main
+# --- Step 3: Run the Python App ---
+info "Step 3: Starting $SCRIPT_NAME with GUI on $DISPLAY"
+
+# Set additional environment variables to help Qt find the X server
+export QT_DEBUG_PLUGINS=1
+export QT_QPA_PLATFORM=xcb
+export XDG_SESSION_TYPE=x11
+
+# --- Step 4: Troubleshooting checks ---
+info "Step 4: Performing troubleshooting checks"
+
+# Check if X server is running
+echo "Checking if X server is running on $DISPLAY..."
+if xdpyinfo -display $DISPLAY >/dev/null 2>&1; then
+    info "✓ X server is running on $DISPLAY"
+else
+    warn "⚠ Could not connect to X server on $DISPLAY (This is expected if not in a graphical environment)"
+fi
+
+# Check $DISPLAY
+echo "Confirming DISPLAY environment variable..."
+CURRENT_DISPLAY=$(echo $DISPLAY)
+info "✓ DISPLAY is set to: $CURRENT_DISPLAY"
+
+# Check if we're in a remote session
+if [ -n "$SSH_CONNECTION" ] || [ -n "$SSH_CLIENT" ] || [ -n "$SSH_TTY" ]; then
+    warn "⚠ Running in SSH session. Make sure X11 forwarding is enabled (ssh -X or ssh -Y)"
+fi
+
+# Try to run the application
+info "Running the application..."
+PYTHONPATH="$PROJECT_DIR:$PYTHONPATH" python -m rythmotron.main
 RUN_EXIT_CODE=$?
 
 if [ $RUN_EXIT_CODE -ne 0 ]; then
     warn "Application exited with status code $RUN_EXIT_CODE."
+    cat error.log
+    echo ""
+    warn "For troubleshooting, try these steps:"
+    echo "1. Check if X server is running: echo \$DISPLAY (should show :0.0)"
+    echo "2. Allow X connections: xhost +local:"
+    echo "3. If using SSH, reconnect using: ssh -X user@host"
+    echo ""
 fi
 
 info "$SCRIPT_NAME finished."

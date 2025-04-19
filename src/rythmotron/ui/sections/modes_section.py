@@ -10,7 +10,7 @@ from PySide6.QtGui import QPainterPath, QPainter
 from ..controls.button_components import ModeToggleButton, RytmButton, ModeButton
 from ...style import Colors
 from ...constants import Track, TRACK_COLORS
-from ..rytm_gui import RythmContext
+from ...utils.context import RythmContext
 
 
 class TrackButton(ModeButton):

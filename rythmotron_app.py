@@ -5,8 +5,10 @@ RythmoTron - Main Entry Point Script
 This script serves as the main entry point for running the RythmoTron application.
 """
 
-import sys
 import os
+os.environ['DISPLAY'] = ':0.0'
+
+import sys
 from pathlib import Path
 
 # Add src directory to the Python path

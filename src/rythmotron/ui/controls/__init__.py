@@ -9,4 +9,4 @@ from . import knob_components
 from . import pad_components
 
 # Import RythmContext to consume state
-from ..rytm_gui import RythmContext
+from ...utils.context import RythmContext

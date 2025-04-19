@@ -32,6 +32,12 @@ fi
 PYTHON_VERSION=$(python3 --version | awk '{print $2}')
 echo -e "${BLUE}Found Python ${PYTHON_VERSION}${NC}"
 
+# Enforce Python 3.9 or later in the dev_setup.sh script
+if [[ $(python3 -c 'import sys; print(sys.version_info[:2] >= (3, 9))') != "True" ]]; then
+    echo -e "${RED}Python 3.9 or later is required. Please upgrade your Python version.${NC}"
+    exit 1
+fi
+
 # Create virtual environment if it doesn't exist
 if [ ! -d ".venv" ]; then
     echo -e "${YELLOW}Creating virtual environment...${NC}"

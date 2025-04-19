@@ -21,49 +21,7 @@ from .sections.parameters_section import ParametersSection
 from .sections.modes_section import ModesSection
 from ..constants import Track
 from ..style import Colors
-
-from PySide6.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
-
-class RythmContext(QObject):
-    current_track_changed = pyqtSignal(Track)
-    is_playing_changed = pyqtSignal(bool)
-    current_step_changed = pyqtSignal(int)
-
-    def __init__(self):
-        super().__init__()
-        self._current_track = Track.BD
-        self._is_playing = False
-        self._current_step = -1
-
-    @property
-    def current_track(self):
-        return self._current_track
-
-    @current_track.setter
-    def current_track(self, value):
-        if self._current_track != value:
-            self._current_track = value
-            self.current_track_changed.emit(value)
-
-    @property
-    def is_playing(self):
-        return self._is_playing
-
-    @is_playing.setter
-    def is_playing(self, value):
-        if self._is_playing != value:
-            self._is_playing = value
-            self.is_playing_changed.emit(value)
-
-    @property
-    def current_step(self):
-        return self._current_step
-
-    @current_step.setter
-    def current_step(self, value):
-        if self._current_step != value:
-            self._current_step = value
-            self.current_step_changed.emit(value)
+from ..utils.context import RythmContext
 
 
 class RythmGUI(QMainWindow):
@@ -80,6 +38,10 @@ class RythmGUI(QMainWindow):
         
         # Initialize RythmContext
         self.context = RythmContext()
+        
+        # Initialize instance variables
+        self.current_parameter_page = "SYNTH"
+        self.is_recording = False
         
         # Set up the main layout and UI components
         self.setup_ui()

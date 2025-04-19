@@ -12,4 +12,4 @@ from . import sequencer_section
 from . import top_section
 
 # Import RythmContext to consume state
-from ..rytm_gui import RythmContext
+from ...utils.context import RythmContext

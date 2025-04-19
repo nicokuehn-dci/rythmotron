@@ -9,7 +9,7 @@ from PySide6.QtCore import Signal, Qt
 from ..controls.knob_components import VirtualKnob, ParameterKnob
 from ..controls.button_components import PageButton
 from ...style import Colors
-from ..rytm_gui import RythmContext
+from ...utils.context import RythmContext
 
 
 class ParametersSection(QWidget):

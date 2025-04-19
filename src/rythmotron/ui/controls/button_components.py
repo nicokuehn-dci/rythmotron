@@ -10,7 +10,7 @@ from PySide6.QtGui import QIcon
 
 # Update the import path to correctly reference style from the parent package
 from ...style import Colors
-from ..rytm_gui import RythmContext
+from ...utils.context import RythmContext
 
 
 class RytmButton(QPushButton):

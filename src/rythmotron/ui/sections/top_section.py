@@ -10,7 +10,7 @@ from PySide6.QtGui import QPainter, QColor, QPen
 from ..controls.button_components import TransportButton
 from ..controls.knob_components import VirtualKnob
 from ...style import Colors
-from ..rytm_gui import RythmContext
+from ...utils.context import RythmContext
 
 
 class TopBarSection(QWidget):

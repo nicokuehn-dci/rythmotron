@@ -6,13 +6,13 @@ This module provides various knob and dial classes used throughout the RythmoTro
 
 from PySide6.QtWidgets import QDial, QWidget
 from PySide6.QtCore import Signal, Qt, QPointF
-from PySide6.QtGui import QPainter, QColor, QPen
+from PySide6.QtGui import QPainter, QColor, QPen, QLinearGradient
 
 # Update the import path to correctly reference style from the parent package
 from ...style import Colors
 
 # Import RythmContext to consume state
-from ...context import RythmContext
+from ...utils.context import RythmContext
 
 
 class VirtualKnob(QDial):

@@ -8,7 +8,7 @@ from PySide6.QtCore import Signal, Qt
 
 from ..controls.pad_components import VirtualPad
 from ...constants import Track, TRACK_COLORS
-from ..rytm_gui import RythmContext
+from ...utils.context import RythmContext
 
 
 class PadsSection(QWidget):

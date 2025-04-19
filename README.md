@@ -1,64 +1,55 @@
-# RythmoTron
+# RythmoTron Emulator
 
-A software emulator inspired by the Elektron Analog Rytm drum machine.
+RythmoTron is a software emulator inspired by the Elektron Analog Rytm drum machine. It provides a virtual environment for creating and manipulating rhythm patterns, audio samples, and more.
 
 ![RythmoTron](https://via.placeholder.com/800x450.png?text=RythmoTron+Screenshot)
 
 ## Features
 
-- Modern GUI-based drum machine interface
+- **Audio Engine**: High-performance audio playback and manipulation.
+- **Graphical User Interface (GUI)**: Intuitive interface for controlling rhythm patterns and audio parameters.
+- **Modular Design**: Easily extendable with custom components and sections.
+- **Logging**: Comprehensive logging for debugging and monitoring.
 - Step sequencer with pattern editing
 - Sound design with synthesizer controls and samples
-- Audio engine with real-time playback
 - Sample management and waveform visualization
 - Project-based workflow for saving and loading your work
 
 ## Installation
 
-### Prerequisites
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/nicokuehn-dci/rythmotron.git
+   cd rythmotron
+   ```
 
-- Python 3.9 or newer
-- pip (Python package installer)
+2. Set up the virtual environment:
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
 
-### Setup
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-1. Clone this repository or download the source code:
+4. Install the package in development mode:
+   ```bash
+   python setup.py develop
+   ```
 
-```bash
-git clone https://github.com/nicokuehn-dci/rythmotron.git
-cd rythmotron
-```
+## Running the Application
 
-2. Create and activate a virtual environment:
+1. Activate the virtual environment (if not already activated):
+   ```bash
+   source .venv/bin/activate
+   ```
 
-```bash
-# Create a virtual environment
-python3 -m venv .venv
-
-# Activate the virtual environment
-# On Windows:
-.venv\Scripts\activate
-# On macOS/Linux:
-source .venv/bin/activate
-```
-
-3. Install the package and its dependencies:
-
-```bash
-pip install -e .
-```
-
-## Usage
-
-After installation, run the application with:
-
-```bash
-# Using the entry point
-rythmotron
-
-# Or using the start script
-./start.sh
-```
+2. Start the application:
+   ```bash
+   ./start.sh
+   ```
 
 Alternatively, you can run the module directly:
 
@@ -66,12 +57,26 @@ Alternatively, you can run the module directly:
 python -m rythmotron.main
 ```
 
+- Launch the application and explore the GUI to create rhythm patterns.
+- Use the `data/` directory to manage your presets, projects, and samples.
+
 ### Basic Workflow
 
 1. Use the sequencer section to create drum patterns with the step sequencer
 2. Select parameter pages (SYNTH, SAMPLE, FILTER, AMP, LFO) to customize sounds
 3. Use the virtual pads to trigger sounds manually
 4. Save your project for future sessions
+
+## API Reference
+
+### Audio Engine
+
+- `AudioEngine.set_bpm(bpm: float)`: Set the beats per minute.
+- `AudioEngine.play_sample(sample: Sample, volume: float)`: Play an audio sample.
+
+### GUI
+
+- `RytmGui.render()`: Render the graphical user interface.
 
 ## Project Structure
 
@@ -142,8 +147,8 @@ RythmoTron uses a modular architecture with these key components:
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please feel free to submit a Pull Request. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to this project.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
