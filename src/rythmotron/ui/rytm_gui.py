@@ -13,7 +13,7 @@ from PySide6.QtGui import QIcon
 from PySide6.QtCore import Signal
 import PySide6.QtCore as QtCore                
 
-from .sections.top_section import TopBarSection as TopSection
+from .sections.top_section import TopSection
 from .sections.pads_section import PadsSection
 from .sections.display_section import DisplaySection
 from .sections.sequencer_section import SequencerSection
