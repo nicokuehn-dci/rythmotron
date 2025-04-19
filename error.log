@@ -1,3 +1,5 @@
 2025-04-19 09:58:34 [WARN] Attempting to repair virtual environment...
 2025-04-19 09:58:36 [WARN] requirements.txt not found. Skipping dependency installation.
 2025-04-19 09:58:36 ERROR: file:///home/nico-kuehn-dci/Desktop/portfolio does not appear to be a Python project: neither 'setup.py' nor 'pyproject.toml' found.
+2025-04-19 13:07:55 [WARN] requirements.txt not found. Skipping dependency installation.
+2025-04-19 13:07:55 ERROR: file:///home/nico-kuehn-dci/Desktop/portfolio does not appear to be a Python project: neither 'setup.py' nor 'pyproject.toml' found.

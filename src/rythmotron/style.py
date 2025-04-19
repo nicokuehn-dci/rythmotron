@@ -21,6 +21,7 @@ class Colors:
     BACKGROUND = "#212121"            # Dark charcoal background
     BACKGROUND_LIGHT = "#2A2A2A"      # Slightly lighter panels
     SURFACE = "#303030"               # Control surfaces
+    SURFACE_DARKER = "#252525"        # Slightly darker surface color for contrast
     
     # Accent Colors
     ACCENT = "#FF5722"                # Hot orange primary accent
