@@ -13,14 +13,14 @@ from PySide6.QtGui import QIcon
 from PySide6.QtCore import Signal
 import PySide6.QtCore as QtCore                
 
-from .sections.top_section import TopSection
+from .sections.top_section import TopBarSection as TopSection
 from .sections.pads_section import PadsSection
 from .sections.display_section import DisplaySection
 from .sections.sequencer_section import SequencerSection
 from .sections.parameters_section import ParametersSection
 from .sections.modes_section import ModesSection
-from .constants import Track
-from .style import Colors
+from ..constants import Track
+from ..style import Colors
 
 
 class RythmGUI(QMainWindow):

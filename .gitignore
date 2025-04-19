@@ -172,3 +172,27 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# RythmoTron specific
+error.log
+logs/*
+!logs/README.md
+data/samples/*
+!data/samples/.gitkeep
+data/presets/*
+!data/presets/.gitkeep
+data/projects/*
+!data/projects/.gitkeep
+tests/test_data/samples/*
+!tests/test_data/samples/.gitkeep
+tests/test_data/presets/*
+!tests/test_data/presets/.gitkeep
+
+# Keep empty directories
+!**/.gitkeep
+
+# VSCode
+.vscode/
+
+# User-specific config
+~/.rythmotron/

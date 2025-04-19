@@ -1,8 +1,16 @@
+#!/usr/bin/env python3
+"""
+RythmoTron - Main Entry Point
+
+This is the main entry point for the RythmoTron application.
+It initializes and runs the application.
+"""
+
 import sys
 import logging
 from PySide6.QtWidgets import QApplication
 
-from .rytm_gui import AnalogRytmGUI
+from .rytm_gui import RythmGUI
 from .style import apply_style
 
 # Configure logging
@@ -13,15 +21,16 @@ logging.basicConfig(
 )
 
 def main():
-    """Entry point for the ARythm-EMU application."""
+    """Initialize and run the application."""
     app = QApplication(sys.argv)
+    app.setApplicationName("RythmoTron")
     
     # Apply the modern UI style
     theme = apply_style(app)
     
     try:
         # Create and show main window using the new GUI
-        window = AnalogRytmGUI()
+        window = RythmGUI()
         window.show()
         
         # Enter the application main loop
