@@ -116,31 +116,23 @@ class TransportButton(QPushButton):
 
 
 class ModeButton(QPushButton):
-    """Button for selecting different modes and views."""
-    
-    def __init__(self, text="", parent=None):
+    """Button for selecting pattern modes."""
+
+    def __init__(self, text, parent=None):
         super().__init__(text, parent)
-        self.setFixedSize(100, 40)
+        self.setFixedHeight(30)
         self.setCheckable(True)
+        self.update_style()
+
+    def update_style(self):
+        """Update the button's visual style based on its state."""
+        if self.isChecked():
+            style = f"background-color: {Colors.ACCENT}; color: {Colors.TEXT_PRIMARY};"
+        else:
+            style = f"background-color: {Colors.SURFACE}; color: {Colors.TEXT_SECONDARY};"
         
-        # Set the button style
-        self.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {Colors.SURFACE};
-                color: {Colors.TEXT_PRIMARY};
-                border: 2px solid {Colors.GRID_LINES};
-                border-radius: 6px;
-                font-weight: bold;
-            }}
-            QPushButton:checked {{
-                background-color: {Colors.ACCENT};
-                color: {Colors.SURFACE};
-                border-color: {Colors.ACCENT_DARKER};
-            }}
-            QPushButton:hover {{
-                background-color: {Colors.SURFACE_HOVER};
-            }}
-        """)
+        style += " border: 1px solid {Colors.GRID_LINES}; border-radius: 3px; padding: 2px 5px;"
+        self.setStyleSheet(style)
 
 
 class ModeToggleButton(QPushButton):
@@ -279,86 +271,52 @@ class ToggleButton(QPushButton):
 
 
 class TrigButton(QPushButton):
-    """A sequencer trig button that shows different states."""
+    """Button for triggering steps in the sequencer."""
 
-    def __init__(self, step_num, parent=None):
+    def __init__(self, step_index, parent=None):
         super().__init__(parent)
-        self.step_num = step_num
-        self.has_trig = False
-        self.has_param_lock = False
+        self.step_index = step_index
+        self.is_triggered = False
         self.is_current_step = False
-
-        # Configure appearance
-        self.setFixedSize(40, 30)
-        self.setText(str(step_num + 1))
+        self.has_param_lock = False
+        self.setFixedSize(30, 30)
         self.setCheckable(True)
+        self.update_style()
 
-    def setHasTrig(self, has_trig):
-        """Set whether this step has a trigger."""
-        self.has_trig = has_trig
-        self.update()
+    def set_trigger(self, triggered):
+        """Set whether this step is triggered."""
+        self.is_triggered = triggered
+        self.setChecked(triggered)
+        self.update_style()
 
-    def setHasParamLock(self, has_lock):
-        """Set whether this step has parameter locks."""
-        self.has_param_lock = has_lock
-        self.update()
-
-    def setCurrentStep(self, is_current):
+    def set_current_step(self, is_current):
         """Set whether this is the current playing step."""
         self.is_current_step = is_current
-        self.update()
+        self.update_style()
 
-    def paintEvent(self, event):
-        """Custom paint event to draw the trig button."""
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
+    def set_param_lock(self, has_lock):
+        """Set whether this step has a parameter lock."""
+        self.has_param_lock = has_lock
+        self.update_style()
 
-        # Get the rect to draw in
-        rect = self.rect()
-
-        # Draw base button
-        base_color = QColor(Colors.SURFACE)
-        painter.fillRect(rect, base_color)
-
-        # Border
-        border_color = QColor(Colors.GRID_LINES)
-        if self.isChecked():
-            border_color = QColor(Colors.ACCENT)
-
-        border_pen = QPen(border_color)
-        border_pen.setWidth(1)
-        painter.setPen(border_pen)
-        painter.drawRect(rect.adjusted(1, 1, -1, -1))
-
-        # Draw LED indicator
-        led_rect = QRect(rect.right() - 12, rect.top() + 3, 8, 8)
-
-        if self.has_trig:
-            if self.has_param_lock:
-                # Parameter lock - orange pulsing effect (simplified here)
-                painter.setBrush(QColor(Colors.ACCENT).lighter(120))
-            else:
-                # Regular trig - solid orange
-                painter.setBrush(QColor(Colors.ACCENT))
-            painter.setPen(Qt.NoPen)
-            painter.drawEllipse(led_rect)
-
-        # Current step indicator - white LED
+    def update_style(self):
+        """Update the button's visual style based on its state."""
         if self.is_current_step:
-            current_rect = QRect(rect.left() + 3, rect.top() + 3, 8, 8)
-            painter.setBrush(QColor("#FFFFFF"))
-            painter.setPen(Qt.NoPen)
-            painter.drawEllipse(current_rect)
+            if self.is_triggered:
+                style = f"background-color: {Colors.ACCENT}; border: 2px solid {Colors.ACCENT};"
+            else:
+                style = f"background-color: {Colors.SURFACE}; border: 2px solid {Colors.ACCENT};"
+        else:
+            if self.is_triggered:
+                style = f"background-color: {Colors.TRIGGER}; border: 2px solid {Colors.TRIGGER};"
+            else:
+                style = f"background-color: {Colors.SURFACE}; border: 2px solid {Colors.GRID_LINES};"
 
-        # Draw step number
-        painter.setPen(QColor(Colors.TEXT_PRIMARY))
-        if self.is_current_step or self.isChecked():
-            # Use bold text for current step
-            font = painter.font()
-            font.setBold(True)
-            painter.setFont(font)
+        if self.has_param_lock:
+            style += f" border-left: 4px solid {Colors.PARAM_LOCK};"
 
-        painter.drawText(rect, Qt.AlignCenter, str(self.step_num + 1))
+        style += " border-radius: 3px;"
+        self.setStyleSheet(style)
 
 
 class ParameterPageButton(QPushButton):

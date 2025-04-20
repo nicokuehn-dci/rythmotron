@@ -9,40 +9,12 @@ from PySide6.QtGui import QPalette, QColor
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
+from .style.colors import Colors
+
 """
 ARythm-EMU UI Styling Module
 Contains theme definitions and styles for a modern, dark UI with orange accents.
 """
-
-# Theme Color Definitions
-class Colors:
-    # Base Colors
-    BACKGROUND_DARK = "#1A1A1A"       # Nearly black background
-    BACKGROUND = "#212121"            # Dark charcoal background
-    BACKGROUND_LIGHT = "#2A2A2A"      # Slightly lighter panels
-    SURFACE = "#303030"               # Control surfaces
-    SURFACE_DARKER = "#252525"        # Slightly darker surface color for contrast
-    
-    # Accent Colors
-    ACCENT = "#FF5722"                # Hot orange primary accent
-    ACCENT_DARKER = "#E64A19"         # Darker version for hover/pressed
-    ACCENT_LIGHTER = "#FF7043"        # Lighter version for highlights
-    
-    # Text Colors
-    TEXT_PRIMARY = "#FFFFFF"          # White text
-    TEXT_SECONDARY = "#B0B0B0"        # Light gray for secondary text
-    TEXT_DISABLED = "#757575"         # Medium gray for disabled text
-    
-    # Functional Colors
-    SUCCESS = "#4CAF50"               # Green for success states
-    WARNING = "#FFC107"               # Yellow/amber for warnings
-    ERROR = "#F44336"                 # Red for error states
-    
-    # Sequencer Grid Colors
-    GRID_LINES = "#3A3A3A"            # Grid lines
-    INACTIVE_STEP = "#383838"         # Inactive step
-    ACTIVE_STEP = "#FF5722"           # Active step highlight
-
 
 # Style Sheets for Different UI Elements
 class StyleSheets:
@@ -217,7 +189,6 @@ class StyleSheets:
             background-color: {Colors.BACKGROUND_DARK};
             color: {Colors.TEXT_SECONDARY};
             padding: 10px 16px;
-            margin-right: 2px;
             margin-bottom: -1px;
             border-top-left-radius: 4px;
             border-top-right-radius: 4px;
@@ -302,21 +273,35 @@ class StyleSheets:
     
     # For pattern/track labels in sequencer
     TRACK_LABEL = f"""
-        QLabel.track_label {{
+        QLabel#track_label {{
+            font-size: 10pt;
             font-weight: bold;
-            padding: 2px 5px;
-            background-color: {Colors.BACKGROUND_DARK};
-            border-radius: 3px;
+            color: {Colors.TEXT_SECONDARY};
+            padding: 3px;
         }}
     """
 
-
 def apply_style(app):
-    """Apply the application-wide style to the QApplication instance"""
-    # Set base style for the application
+    """Apply the global application style."""
+    # Create and set the application palette
+    palette = QPalette()
+    palette.setColor(QPalette.Window, QColor(Colors.BACKGROUND))
+    palette.setColor(QPalette.WindowText, QColor(Colors.TEXT_PRIMARY))
+    palette.setColor(QPalette.Base, QColor(Colors.SURFACE))
+    palette.setColor(QPalette.AlternateBase, QColor(Colors.SURFACE_DARKER))
+    palette.setColor(QPalette.ToolTipBase, QColor(Colors.BACKGROUND_DARK))
+    palette.setColor(QPalette.ToolTipText, QColor(Colors.TEXT_PRIMARY))
+    palette.setColor(QPalette.Text, QColor(Colors.TEXT_PRIMARY))
+    palette.setColor(QPalette.Button, QColor(Colors.SURFACE))
+    palette.setColor(QPalette.ButtonText, QColor(Colors.TEXT_PRIMARY))
+    palette.setColor(QPalette.BrightText, QColor(Colors.ACCENT))
+    palette.setColor(QPalette.Link, QColor(Colors.ACCENT))
+    palette.setColor(QPalette.Highlight, QColor(Colors.ACCENT))
+    palette.setColor(QPalette.HighlightedText, QColor(Colors.TEXT_PRIMARY))
+    
+    app.setPalette(palette)
+    
+    # Apply base style sheet
     app.setStyleSheet(StyleSheets.BASE)
     
-    return {
-        "colors": Colors,
-        "styles": StyleSheets
-    }
+    return palette

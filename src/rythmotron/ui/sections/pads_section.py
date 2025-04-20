@@ -6,9 +6,10 @@ This section contains drum pads for each track.
 from PySide6.QtWidgets import QWidget, QFrame, QGridLayout, QVBoxLayout
 from PySide6.QtCore import Signal, Qt
 
-from ..controls.pad_components import VirtualPad
-from ...constants import Track, TRACK_COLORS
-from ...utils.context import RythmContext
+from rythmotron.constants import Track, TRACK_COLORS
+from rythmotron.style.colors import Colors
+from rythmotron.ui.widgets.virtual_pad import VirtualPad
+from rythmotron.utils.context import RythmContext
 
 
 class PadsSection(QWidget):
@@ -27,30 +28,27 @@ class PadsSection(QWidget):
         """Set up the drum pad grid UI."""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(10)
         
-        # Create the pad frame
+        # Create pad grid frame
         pad_frame = QFrame()
         pad_frame.setFrameShape(QFrame.StyledPanel)
-        pad_frame.setStyleSheet("""
-            QFrame {
-                background-color: #1A1A1A;
-                border-radius: 5px;
-                padding: 10px;
-            }
-        """)
+        pad_frame.setStyleSheet(f"background-color: {Colors.SURFACE_DARKER}; border-radius: 5px; padding: 10px;")
         
-        # Create grid layout for pads
         pad_layout = QGridLayout(pad_frame)
-        pad_layout.setSpacing(10)
+        pad_layout.setSpacing(5)
         
-        # Create drum pads in a 4x3 grid (12 pads)
-        tracks = [track for track in Track if track != Track.FX]
-        row, col = 0, 0
+        # Create pads for each track
+        row = 0
+        col = 0
+        
+        # Get all available tracks
+        tracks = [track for track in Track]
         
         for track in tracks:
             # Get track color from constants
-            track_color = TRACK_COLORS[track].value.name()
-            track_name = track.value
+            track_color = TRACK_COLORS[track]
+            track_name = track.name
             
             # Create the pad
             pad = VirtualPad(track_name, track_color)
@@ -68,8 +66,8 @@ class PadsSection(QWidget):
                 col = 0
                 row += 1
                 
-        # Set the first pad (BD) as selected initially
-        self.set_current_track(self.context.current_track)
+        # Set the first pad (KICK) as selected initially
+        self.set_current_track(Track.KICK)
         
         layout.addWidget(pad_frame)
         layout.addStretch(1)  # Add stretch to push pads to the top

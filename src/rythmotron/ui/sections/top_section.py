@@ -13,7 +13,7 @@ from ...style import Colors
 from ...utils.context import RythmContext
 
 
-class TopBarSection(QWidget):
+class TopSection(QWidget):
     """Top bar with project info, tempo controls, and transport buttons."""
     
     play_clicked = Signal()

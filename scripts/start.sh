@@ -32,18 +32,11 @@ PROJECT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$PROJECT_DIR" || error_exit "Could not change to project directory: $PROJECT_DIR"
 info "Running in directory: $PROJECT_DIR"
 
-# --- Step 1: Set DISPLAY Environment Variable --- 
-info "Step 1: Setting DISPLAY environment variable to :0.0"
-export DISPLAY=":0.0"
-info "DISPLAY environment variable is set to: $DISPLAY"
-
-# --- Step 2: Allow X11 Connections ---
-info "Step 2: Allowing X11 connections"
-xhost +local: >/dev/null 2>&1 || warn "Failed to run xhost +local: (This is okay if not running in a graphical environment)"
-
-echo ""
-echo "🖥️  GUI will be shown on display server: $DISPLAY"
-echo ""
+# --- Detect Environment ---
+SESSION_TYPE=$(echo $XDG_SESSION_TYPE)
+CURRENT_DISPLAY=$(echo $DISPLAY)
+info "Detected session type: $SESSION_TYPE"
+info "Detected display: $CURRENT_DISPLAY"
 
 # --- Check Python Version ---
 info "Checking Python version..."
@@ -140,49 +133,63 @@ if [ $? -ne 0 ]; then
     error_exit "Failed to install package in development mode."
 fi
 
-# --- Step 3: Run the Python App ---
-info "Step 3: Starting $SCRIPT_NAME with GUI on $DISPLAY"
+# --- Configure display settings for GUI ---
+info "Configuring display settings based on environment..."
 
-# Set additional environment variables to help Qt find the X server
-export QT_DEBUG_PLUGINS=1
-export QT_QPA_PLATFORM=xcb
-export XDG_SESSION_TYPE=x11
-
-# --- Step 4: Troubleshooting checks ---
-info "Step 4: Performing troubleshooting checks"
-
-# Check if X server is running
-echo "Checking if X server is running on $DISPLAY..."
-if xdpyinfo -display $DISPLAY >/dev/null 2>&1; then
-    info "✓ X server is running on $DISPLAY"
+# Set DISPLAY environment variable if not already set
+if [ -z "$DISPLAY" ]; then
+    export DISPLAY=":0.0"
+    info "Setting DISPLAY environment variable to :0.0"
 else
-    warn "⚠ Could not connect to X server on $DISPLAY (This is expected if not in a graphical environment)"
+    info "Using existing DISPLAY setting: $DISPLAY"
 fi
 
-# Check $DISPLAY
-echo "Confirming DISPLAY environment variable..."
-CURRENT_DISPLAY=$(echo $DISPLAY)
-info "✓ DISPLAY is set to: $CURRENT_DISPLAY"
-
-# Check if we're in a remote session
-if [ -n "$SSH_CONNECTION" ] || [ -n "$SSH_CLIENT" ] || [ -n "$SSH_TTY" ]; then
-    warn "⚠ Running in SSH session. Make sure X11 forwarding is enabled (ssh -X or ssh -Y)"
+# Configure Qt platform based on session type
+if [ "$SESSION_TYPE" = "wayland" ]; then
+    info "Wayland session detected, configuring app accordingly"
+    # Try Wayland first, with XWayland as fallback for Qt apps
+    export QT_QPA_PLATFORM=wayland
+    export XDG_SESSION_TYPE=wayland
+else
+    info "X11 or unknown session detected, using X11 compatibility"
+    export QT_QPA_PLATFORM=xcb
+    export XDG_SESSION_TYPE=x11
 fi
 
-# Try to run the application
-info "Running the application..."
-PYTHONPATH="$PROJECT_DIR:$PYTHONPATH" python -m rythmotron.main
+# Additional environment settings for better compatibility
+export PYTHONPATH="$PROJECT_DIR:$PYTHONPATH"
+export QT_DEBUG_PLUGINS=1
+
+# --- Run the Application ---
+info "Starting $SCRIPT_NAME with GUI display settings..."
+info "QT Platform: $QT_QPA_PLATFORM"
+info "Display: $DISPLAY"
+
+python -m rythmotron.main
 RUN_EXIT_CODE=$?
 
 if [ $RUN_EXIT_CODE -ne 0 ]; then
-    warn "Application exited with status code $RUN_EXIT_CODE."
-    cat error.log
-    echo ""
-    warn "For troubleshooting, try these steps:"
-    echo "1. Check if X server is running: echo \$DISPLAY (should show :0.0)"
-    echo "2. Allow X connections: xhost +local:"
-    echo "3. If using SSH, reconnect using: ssh -X user@host"
-    echo ""
+    warn "First attempt exited with status code $RUN_EXIT_CODE. Trying alternative method..."
+    
+    # If the first attempt failed and we're on Wayland, try with XWayland
+    if [ "$SESSION_TYPE" = "wayland" ] && [ "$QT_QPA_PLATFORM" = "wayland" ]; then
+        info "Trying with XWayland compatibility..."
+        export QT_QPA_PLATFORM=xcb
+        python -m rythmotron.main
+        RUN_EXIT_CODE=$?
+    # If the first attempt failed and we're on X11, try with Wayland
+    elif [ "$QT_QPA_PLATFORM" = "xcb" ]; then
+        info "Trying with Wayland compatibility..."
+        export QT_QPA_PLATFORM=wayland
+        python -m rythmotron.main
+        RUN_EXIT_CODE=$?
+    fi
+    
+    # If still failing, show error log
+    if [ $RUN_EXIT_CODE -ne 0 ]; then
+        warn "Application exited with status code $RUN_EXIT_CODE."
+        cat error.log
+    fi
 fi
 
 info "$SCRIPT_NAME finished."

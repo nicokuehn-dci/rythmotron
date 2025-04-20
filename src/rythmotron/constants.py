@@ -6,31 +6,84 @@ This module contains all the constants and enumerations used throughout the Ryth
 
 from enum import Enum, auto
 
+class TrackMode(Enum):
+    """Available track modes."""
+    AUDIO = auto()  # Sample-based audio track
+    MIDI = auto()   # MIDI-controlled track
+    CV = auto()     # CV/Gate output track
+
 class Track(Enum):
-    """Enum representing the 12 drum tracks and the FX track of the Analog Rytm."""
-    BD = auto()  # Bass Drum
-    SD = auto()  # Snare Drum
-    RS = auto()  # Rim Shot
-    CP = auto()  # Clap
-    BT = auto()  # Bass Tom
-    LT = auto()  # Low Tom
-    MT = auto()  # Mid Tom
-    HT = auto()  # High Tom
-    CH = auto()  # Closed Hat
-    OH = auto()  # Open Hat
-    CY = auto()  # Cymbal
-    CB = auto()  # Cowbell
-    FX = auto()  # FX Track
+    """Available drum tracks."""
+    KICK = "KICK"
+    SNARE = "SNARE"
+    HIHAT = "HIHAT"
+    TOM1 = "TOM1"
+    TOM2 = "TOM2"
+    CRASH = "CRASH"
+    RIDE = "RIDE"
+    PERC1 = "PERC1"
+    PERC2 = "PERC2"
+    PERC3 = "PERC3"
+    PERC4 = "PERC4"
+
+class Mode(Enum):
+    """Operating modes for RythmoTron."""
+    
+    PATTERN = "PATTERN"
+    SONG = "SONG"
+    PERFORM = "PERFORM"
+    SOUND = "SOUND"
+    GLOBAL = "GLOBAL"
+    
+    @classmethod
+    def get_all(cls):
+        """Get all mode values."""
+        return [mode for mode in cls]
+    
+    @classmethod
+    def get_name(cls, mode):
+        """Get the display name for a mode."""
+        return mode.value
+
+class ParameterPage(Enum):
+    """Parameter pages available in RythmoTron."""
+    
+    SYNTH = "SYNTH"
+    SAMPLE = "SAMPLE"
+    FILTER = "FILTER"
+    AMP = "AMP"
+    LFO = "LFO"
+    
+    @classmethod
+    def get_all(cls):
+        """Get all parameter page values."""
+        return [page for page in cls]
+    
+    @classmethod
+    def get_name(cls, page):
+        """Get the display name for a parameter page."""
+        return page.value
 
 class FilterType(Enum):
-    """Enum representing the 7 filter types available on the Analog Rytm."""
-    LP2 = auto()  # 2-pole Lowpass
-    LP1 = auto()  # 1-pole Lowpass
-    BP = auto()   # Bandpass
-    HP1 = auto()  # 1-pole Highpass
-    HP2 = auto()  # 2-pole Highpass
-    BS = auto()   # Bandstop
-    PK = auto()   # Peak
+    """Filter types available in RythmoTron."""
+    
+    LOWPASS = "LOWPASS"
+    HIGHPASS = "HIGHPASS"
+    BANDPASS = "BANDPASS"
+    NOTCH = "NOTCH"
+    PEAK = "PEAK"
+    LOWSHELF = "LOWSHELF"
+    HIGHSHELF = "HIGHSHELF"
+    
+    @classmethod
+    def get_all(cls):
+        """Get all filter type values."""
+        return [filter_type for filter_type in cls]
+    
+    @classmethod
+    def get_name(cls, filter_type):
+        """Get the display name for a filter type."""
+        return filter_type.value
 
 # Sequencer constants
 DEFAULT_BPM = 120
@@ -43,19 +96,17 @@ STEP_RESOLUTIONS = ["1/16", "1/8", "1/8T", "1/4", "1/4T", "1/2", "1/2T", "1"]
 GRID_SIZE = 40  # Size of a step in pixels
 TRACK_HEIGHT = 50
 TRACK_COLORS = {
-    Track.BD: "#FF5252",  # Red
-    Track.SD: "#FF9800",  # Orange
-    Track.RS: "#FFEB3B",  # Yellow
-    Track.CP: "#8BC34A",  # Light green
-    Track.BT: "#4CAF50",  # Green
-    Track.LT: "#009688",  # Teal
-    Track.MT: "#00BCD4",  # Cyan
-    Track.HT: "#03A9F4",  # Light blue
-    Track.CH: "#2196F3",  # Blue
-    Track.OH: "#3F51B5",  # Indigo
-    Track.CY: "#673AB7",  # Deep purple
-    Track.CB: "#9C27B0",  # Purple
-    Track.FX: "#E91E63",  # Pink
+    Track.KICK: "#FF4444",    # Red
+    Track.SNARE: "#44FF44",   # Green
+    Track.HIHAT: "#4444FF",   # Blue
+    Track.TOM1: "#FFFF44",    # Yellow
+    Track.TOM2: "#FF44FF",    # Magenta
+    Track.CRASH: "#44FFFF",   # Cyan
+    Track.RIDE: "#FF8844",    # Orange
+    Track.PERC1: "#8844FF",   # Purple
+    Track.PERC2: "#44FF88",   # Mint
+    Track.PERC3: "#FF4488",   # Pink
+    Track.PERC4: "#88FF44",   # Lime
 }
 
 # Default names
@@ -79,3 +130,38 @@ MAX_PERFORMANCE_MACROS = 8
 SAMPLE_RATE = 44100
 BUFFER_SIZE = 512
 DEFAULT_VOLUME = 0.8
+
+# Default values
+DEFAULT_TEMPO = 120
+DEFAULT_VELOCITY = 100
+DEFAULT_PAN = 64
+
+# UI constants
+STEPS_PER_PAGE = 16
+MAX_PAGES = 4
+MAX_TRACKS = 8
+MAX_PARAMETERS = 8
+
+# Animation constants
+ANIMATION_FPS = 60
+EFFECT_DURATION = 0.2  # seconds
+GLOW_INTENSITY = 0.8
+HIGHLIGHT_INTENSITY = 0.6
+
+# MIDI note numbers for default track mapping
+DEFAULT_MIDI_NOTES = {
+    Track.KICK: 36,    # C1
+    Track.SNARE: 38,   # D1
+    Track.HIHAT: 42,   # F#1
+    Track.TOM1: 45,    # A1
+    Track.TOM2: 47,    # B1
+    Track.CRASH: 49,   # C#2
+    Track.RIDE: 51,    # D#2
+    Track.PERC1: 53,   # F2
+    Track.PERC2: 55,   # G2
+    Track.PERC3: 57,   # A2
+    Track.PERC4: 59,   # B2
+}
+
+# Default MIDI channel for all tracks
+DEFAULT_MIDI_CHANNEL = 10  # Channel 10 is standard for drums

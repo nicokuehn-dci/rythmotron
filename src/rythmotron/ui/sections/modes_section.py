@@ -5,11 +5,11 @@ This section contains mode buttons and track selection buttons.
 
 from PySide6.QtWidgets import QWidget, QFrame, QVBoxLayout, QHBoxLayout, QButtonGroup, QLabel, QScrollArea
 from PySide6.QtCore import Signal, Qt
-from PySide6.QtGui import QPainterPath, QPainter
+from PySide6.QtGui import QPainterPath, QPainter, QColor
 
 from ..controls.button_components import ModeToggleButton, RytmButton, ModeButton
 from ...style import Colors
-from ...constants import Track, TRACK_COLORS
+from ...constants import Track, TRACK_COLORS, Mode
 from ...utils.context import RythmContext
 
 
@@ -17,31 +17,29 @@ class TrackButton(ModeButton):
     """Track selection button."""
     
     def __init__(self, track, parent=None):
+        """Initialize the track button."""
         super().__init__(track.value, parent)
         self.track = track
-        self.setFixedHeight(25)
-        
-        # Set color based on track
-        if track in TRACK_COLORS:
-            color = TRACK_COLORS[track].value
-            text_color = "#FFFFFF"  # White text for all buttons
-            
-            self.setStyleSheet(f"""
-                QPushButton {{
-                    background-color: rgb({color.red()}, {color.green()}, {color.blue()});
-                    color: {text_color};
-                    border: none;
-                    border-radius: 3px;
-                    padding: 3px;
-                    text-align: left;
-                    padding-left: 10px;
-                }}
-                QPushButton:hover {{
-                    background-color: rgb({min(255, color.red() + 30)}, 
-                                       {min(255, color.green() + 30)}, 
-                                       {min(255, color.blue() + 30)});
-                }}
-            """)
+        self.setCheckable(True)
+        self.setFixedHeight(40)
+        self.setStyleSheet(f"""
+            TrackButton {{
+                background-color: {track.value};
+                color: white;
+                border: none;
+                border-radius: 4px;
+                padding: 4px 8px;
+                font-size: 12px;
+                font-weight: bold;
+            }}
+            TrackButton:hover {{
+                background-color: {track.value}CC;
+            }}
+            TrackButton:checked {{
+                background-color: {track.value}FF;
+                border: 2px solid white;
+            }}
+        """)
 
 
 class ModesSection(QWidget):
@@ -51,6 +49,7 @@ class ModesSection(QWidget):
     track_selected = Signal(Track)  # Track
     
     def __init__(self, context: RythmContext, parent=None):
+        """Initialize the modes section."""
         super().__init__(parent)
         self.context = context
         self.mode_buttons = {}
@@ -58,82 +57,86 @@ class ModesSection(QWidget):
         self.setup_ui()
         
     def setup_ui(self):
-        """Set up the modes section UI."""
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
+        """Set up the user interface."""
+        layout = QHBoxLayout(self)
         layout.setSpacing(10)
+        layout.setContentsMargins(0, 0, 0, 0)
         
-        # Mode buttons
+        # Create modes frame
         self.modes_frame = self._create_modes_frame()
         layout.addWidget(self.modes_frame)
         
-        # Track selection
+        # Create tracks frame
         self.tracks_frame = self._create_tracks_frame()
         layout.addWidget(self.tracks_frame)
         
     def _create_modes_frame(self):
-        """Create the mode buttons frame."""
+        """Create the modes selection frame."""
         frame = QFrame()
-        frame.setFrameShape(QFrame.StyledPanel)
-        frame.setStyleSheet(f"background-color: {Colors.SURFACE_DARKER}; border-radius: 5px; padding: 10px;")
+        frame.setObjectName("modes_frame")
+        frame.setFrameStyle(QFrame.StyledPanel)
         
         layout = QVBoxLayout(frame)
-        layout.setSpacing(10)
+        layout.setSpacing(5)
+        layout.setContentsMargins(5, 5, 5, 5)
         
-        # First row of mode buttons
-        row1 = QHBoxLayout()
-        row1.setSpacing(10)
+        # Add label
+        label = QLabel("Modes")
+        label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(label)
         
-        mute_btn = ModeButton("MUTE")
-        mute_btn.setCheckable(True)
-        mute_btn.toggled.connect(lambda checked: self._on_mode_toggled("MUTE", checked))
-        self.mode_buttons["MUTE"] = mute_btn
+        # Create scroll area
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll_area.setStyleSheet("""
+            QScrollArea {
+                border: none;
+                background-color: transparent;
+            }
+        """)
         
-        chrom_btn = ModeButton("CHROM")
-        chrom_btn.setCheckable(True)
-        chrom_btn.toggled.connect(lambda checked: self._on_mode_toggled("CHROM", checked))
-        self.mode_buttons["CHROM"] = chrom_btn
+        scroll_widget = QWidget()
+        scroll_layout = QVBoxLayout(scroll_widget)
+        scroll_layout.setSpacing(5)
+        scroll_layout.setContentsMargins(0, 0, 0, 0)
         
-        row1.addWidget(mute_btn)
-        row1.addWidget(chrom_btn)
+        # Create buttons for each mode
+        for mode in Mode:
+            btn = ModeButton(mode.value)
+            btn.clicked.connect(lambda checked, m=mode.value: self._on_mode_toggled(m, checked))
+            
+            # Store button reference
+            self.mode_buttons[mode.value] = btn
+            
+            scroll_layout.addWidget(btn)
+            
+        scroll_layout.addStretch(1)  # Add stretch to push buttons to the top
+        scroll_area.setWidget(scroll_widget)
         
-        # Second row of mode buttons
-        row2 = QHBoxLayout()
-        row2.setSpacing(10)
-        
-        scene_btn = ModeButton("SCENE")
-        scene_btn.setCheckable(True)
-        scene_btn.toggled.connect(lambda checked: self._on_mode_toggled("SCENE", checked))
-        self.mode_buttons["SCENE"] = scene_btn
-        
-        perf_btn = ModeButton("PERF")
-        perf_btn.setCheckable(True)
-        perf_btn.toggled.connect(lambda checked: self._on_mode_toggled("PERF", checked))
-        self.mode_buttons["PERF"] = perf_btn
-        
-        row2.addWidget(scene_btn)
-        row2.addWidget(perf_btn)
-        
-        layout.addLayout(row1)
-        layout.addLayout(row2)
+        layout.addWidget(scroll_area)
         
         return frame
         
     def _create_tracks_frame(self):
-        """Create the track selection frame."""
+        """Create the tracks selection frame."""
         frame = QFrame()
-        frame.setFrameShape(QFrame.StyledPanel)
-        frame.setStyleSheet(f"background-color: {Colors.SURFACE_DARKER}; border-radius: 5px; padding: 10px;")
+        frame.setObjectName("tracks_frame")
+        frame.setFrameStyle(QFrame.StyledPanel)
         
         layout = QVBoxLayout(frame)
+        layout.setSpacing(5)
+        layout.setContentsMargins(5, 5, 5, 5)
         
-        track_label = QLabel("TRACK SELECT")
-        track_label.setStyleSheet(f"color: {Colors.TEXT_SECONDARY}; font-weight: bold;")
-        layout.addWidget(track_label)
+        # Add label
+        label = QLabel("Tracks")
+        label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(label)
         
-        # Scrollable area for track buttons
+        # Create scroll area
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         scroll_area.setStyleSheet("""
             QScrollArea {
                 border: none;
@@ -148,10 +151,6 @@ class ModesSection(QWidget):
         
         # Create buttons for each track
         for track in Track:
-            # Skip FX as it's not a regular track
-            if track == Track.FX:
-                continue
-                
             btn = TrackButton(track)
             btn.clicked.connect(lambda checked, t=track: self._on_track_selected(t))
             
