@@ -2,35 +2,37 @@ import React, { useState, useEffect, useRef } from 'react';
 import * as echarts from 'echarts';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Autoplay } from 'swiper/modules';
-import { Slider } from "@/components/ui/slider";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
+import Slider from "./src/components/ui/slider";
+import { Button } from "./src/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./src/components/ui/tabs";
+import { Card, CardContent } from "./src/components/ui/card";
+import Switch from "./src/components/ui/switch";
+import ErrorBoundary from './src/components/ui/ErrorHandler';
 import 'swiper/css';
 import 'swiper/css/pagination';
 
-// Import alle Komponenten
-import Knob from '@/components/KnobWrapper';
-import LED from '@/components/ui/led';
-import Pad from '@/components/ui/pad';
-import XYPad from '@/components/ui/xy-pad';
-import DrumPad from '@/components/ui/drum-pad';
-import WaveformDisplay from '@/components/WaveformDisplay';
-import StepSequencer from '@/components/StepSequencer';
-import TrackList from '@/components/TrackList';
-import FeatureCard from '@/components/FeatureCard';
-import PresetCard from '@/components/PresetCard';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import EffectPanel from '@/components/EffectPanel';
-import TransportControls from '@/components/TransportControls';
-import TestimonialCard from '@/components/TestimonialCard';
-import HeroSection from '@/components/HeroSection';
-import CallToActionSection from '@/components/CallToActionSection';
-import SynthPadGrid from '@/components/SynthPadGrid';
 
-const App: React.FC = () => {
+// Import all components with corrected paths
+import Knob from './src/components/KnobWrapper';
+import LED from './src/components/ui/led';
+import Pad from './src/components/ui/pad';
+import XYPad from './src/components/ui/xy-pad';
+import DrumPad from './src/components/ui/drum-pad';
+import WaveformDisplay from './src/components/WaveformDisplay';
+import StepSequencer from './src/components/StepSequencer';
+import TrackList from './src/components/TrackList';
+import FeatureCard from './src/components/FeatureCard';
+import PresetCard from './src/components/PresetCard';
+import Header from './src/components/Header';
+import Footer from './src/components/Footer';
+import EffectPanel from './src/components/EffectPanel';
+import TransportControls from './src/components/TransportControls';
+import TestimonialCard from './src/components/TestimonialCard';
+import HeroSection from './src/components/HeroSection';
+import CallToActionSection from './src/components/CallToActionSection';
+import SynthPadGrid from './src/components/SynthPadGrid';
+
+const AppBase: React.FC = () => {
 const [activePreset, setActivePreset] = useState(0);
 const [isPlaying, setIsPlaying] = useState(false);
 const [volume, setVolume] = useState(75);
@@ -81,14 +83,14 @@ const tracks = [
 { name: 'FX', color: 'pink', icon: 'fa-waveform', pattern: Array(16).fill(false) },
 ];
 const drumPadSounds = [
-{ name: 'Kick 1', category: 'Kick', color: 'purple' },
-{ name: 'Snare 1', category: 'Snare', color: 'blue' },
-{ name: 'HiHat 1', category: 'HiHat', color: 'green' },
-{ name: 'Clap 1', category: 'Clap', color: 'yellow' },
-{ name: 'Tom 1', category: 'Tom', color: 'red' },
-{ name: 'Perc 1', category: 'Percussion', color: 'orange' },
-{ name: 'Cymbal 1', category: 'Cymbal', color: 'indigo' },
-{ name: 'Effect 1', category: 'Effect', color: 'pink' },
+{ name: 'Kick 1', category: 'Kick', color: 'purple', icon: 'fa-drum' },
+{ name: 'Snare 1', category: 'Snare', color: 'blue', icon: 'fa-drum' },
+{ name: 'HiHat 1', category: 'HiHat', color: 'green', icon: 'fa-hi-hat' },
+{ name: 'Clap 1', category: 'Clap', color: 'yellow', icon: 'fa-hands-clapping' },
+{ name: 'Tom 1', category: 'Tom', color: 'red', icon: 'fa-drum' },
+{ name: 'Perc 1', category: 'Percussion', color: 'orange', icon: 'fa-drum' },
+{ name: 'Cymbal 1', category: 'Cymbal', color: 'indigo', icon: 'fa-circle' },
+{ name: 'Effect 1', category: 'Effect', color: 'pink', icon: 'fa-waveform' },
 ];
 const waveformChartRef = useRef<HTMLDivElement>(null);
 const spectrumChartRef = useRef<HTMLDivElement>(null);
@@ -133,7 +135,7 @@ const initWaveformChart = () => {
 if (waveformChartRef.current) {
 const chart = echarts.init(waveformChartRef.current);
 // Generate sine wave data
-const data = [];
+const data: [number, number][] = [];
 for (let i = 0; i <= 360; i++) {
 const radians = (i * Math.PI) / 180;
 const value = Math.sin(radians * 2);
@@ -194,7 +196,7 @@ const initSpectrumChart = () => {
 if (spectrumChartRef.current) {
 const chart = echarts.init(spectrumChartRef.current);
 // Generate random spectrum data
-const data = [];
+const data: number[] = [];
 for (let i = 0; i < 50; i++) {
 const value = Math.random() * 0.7 + 0.1;
 data.push(value);
@@ -550,40 +552,40 @@ newTracks[trackIndex].pattern[stepIndex] = !newTracks[trackIndex].pattern[stepIn
 <div>
 <h4 className="text-sm mb-2">Velocity</h4>
 <Slider
-value={[stepParams[0].velocity]}
-onValueChange={(values) => {
-const newParams = [...stepParams];
-newParams[0].velocity = values[0];
-setStepParams(newParams);
-}}
-max={100}
-step={1}
+  value={stepParams[0].velocity}
+  onChange={(value) => {
+    const newParams = [...stepParams];
+    newParams[0].velocity = value;
+    setStepParams(newParams);
+  }}
+  max={100}
+  step={1}
 />
 </div>
 <div>
 <h4 className="text-sm mb-2">Probability</h4>
 <Slider
-value={[stepParams[0].probability]}
-onValueChange={(values) => {
-const newParams = [...stepParams];
-newParams[0].probability = values[0];
-setStepParams(newParams);
-}}
-max={100}
-step={1}
+  value={stepParams[0].probability}
+  onChange={(value) => {
+    const newParams = [...stepParams];
+    newParams[0].probability = value;
+    setStepParams(newParams);
+  }}
+  max={100}
+  step={1}
 />
 </div>
 <div>
 <h4 className="text-sm mb-2">Length</h4>
 <Slider
-value={[stepParams[0].length]}
-onValueChange={(values) => {
-const newParams = [...stepParams];
-newParams[0].length = values[0];
-setStepParams(newParams);
-}}
-max={100}
-step={1}
+  value={stepParams[0].length}
+  onChange={(value) => {
+    const newParams = [...stepParams];
+    newParams[0].length = value;
+    setStepParams(newParams);
+  }}
+  max={100}
+  step={1}
 />
 </div>
 </div>
@@ -606,7 +608,7 @@ onChange={setXyPad}
 <div>
 <label className="text-sm mb-2 block">Rate</label>
 <Slider
-value={[lfoRate]}
+value={lfoRate}
 onValueChange={(values) => setLfoRate(values[0])}
 max={100}
 step={1}
@@ -615,7 +617,7 @@ step={1}
 <div>
 <label className="text-sm mb-2 block">Depth</label>
 <Slider
-value={[lfoDepth]}
+value={lfoDepth}
 onValueChange={(values) => setLfoDepth(values[0])}
 max={100}
 step={1}
@@ -780,16 +782,16 @@ step={1}
 <h3 className="text-sm text-zinc-400 mb-4">Sequence Settings</h3>
 <div className="space-y-4">
 <div className="flex items-center space-x-2">
-<Switch id="loop" />
-<label htmlFor="loop" className="text-sm text-zinc-400 cursor-pointer">Loop Sequence</label>
+<Switch checked={false} onChange={() => {}} />
+<label className="text-sm text-zinc-400 cursor-pointer">Loop Sequence</label>
 </div>
 <div className="flex items-center space-x-2">
-<Switch id="quantize" defaultChecked />
-<label htmlFor="quantize" className="text-sm text-zinc-400 cursor-pointer">Quantize</label>
+<Switch checked={true} onChange={() => {}} />
+<label className="text-sm text-zinc-400 cursor-pointer">Quantize</label>
 </div>
 <div className="flex items-center space-x-2">
-<Switch id="swing" />
-<label htmlFor="swing" className="text-sm text-zinc-400 cursor-pointer">Swing</label>
+<Switch checked={false} onChange={() => {}} />
+<label className="text-sm text-zinc-400 cursor-pointer">Swing</label>
 </div>
 <div className="pt-2">
 <Button variant="outline" size="sm" className="w-full border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">
@@ -934,4 +936,12 @@ authorRole={testimonial.authorRole}
 </div>
 );
 };
+
+// Wrap the component with an error boundary
+const App: React.FC = () => (
+  <ErrorBoundary componentName="ARythm-EMU-2050-UI">
+    <AppBase />
+  </ErrorBoundary>
+);
+
 export default App;

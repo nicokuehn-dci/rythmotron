@@ -18,14 +18,35 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ className = '' }) => {
             Experience unparalleled sound design capabilities with our cutting-edge digital synthesizer. Craft sounds from the future, today.
           </p>
           <div className="flex flex-wrap gap-4">
-            <Button className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-8 py-6 text-lg !rounded-button whitespace-nowrap">
+            <Button 
+              variant="premium" 
+              glowColor="#9d4dfa"
+              className="transform-gpu px-8 py-6 text-lg whitespace-nowrap"
+            >
               <i className="fa-solid fa-play mr-2"></i>
               Start Creating
             </Button>
-            <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white px-8 py-6 text-lg !rounded-button whitespace-nowrap">
+            <Button 
+              variant="vintage" 
+              className="transform-gpu px-8 py-6 text-lg whitespace-nowrap"
+            >
               <i className="fa-solid fa-headphones mr-2"></i>
               Listen to Demos
             </Button>
+          </div>
+          <div className="mt-8 flex items-center">
+            <div className="flex -space-x-2 mr-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div 
+                  key={i} 
+                  className="w-8 h-8 rounded-full border-2 border-zinc-900 overflow-hidden"
+                  style={{ backgroundImage: `url(https://i.pravatar.cc/100?img=${i+20})`, backgroundSize: 'cover' }}
+                />
+              ))}
+            </div>
+            <p className="text-sm text-zinc-400">
+              <span className="font-semibold text-zinc-300">2,500+</span> music producers trust ARythm-EMU
+            </p>
           </div>
         </div>
         <div className="md:w-1/2">
@@ -39,6 +60,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ className = '' }) => {
               <div className="flex items-center space-x-2">
                 <LED active={true} color="green" />
                 <span className="text-sm font-medium">Available Now</span>
+              </div>
+            </div>
+            <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-sm border border-zinc-700/50 rounded-lg px-3 py-1">
+              <div className="flex items-center space-x-2">
+                <span className="text-xs font-medium text-zinc-300">Version 2.5.1</span>
               </div>
             </div>
           </div>

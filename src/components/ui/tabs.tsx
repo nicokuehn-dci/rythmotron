@@ -87,14 +87,46 @@ export const TabsTrigger: React.FC<TabsTriggerProps> = ({
   
   return (
     <button
-      className={`px-3 py-2 text-sm font-medium rounded-md transition-colors
-        ${isActive 
-          ? 'bg-zinc-800 text-white' 
-          : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
-        } ${className}`}
+      className={`px-3 py-2 text-sm font-medium rounded-md transition-all relative ${className}`}
       onClick={() => context.onChange(value)}
+      style={{
+        background: isActive 
+          ? 'linear-gradient(145deg, #2a2a2a, #222222)' 
+          : 'transparent',
+        boxShadow: isActive
+          ? 'inset 2px 2px 5px rgba(0, 0, 0, 0.5), inset -1px -1px 2px rgba(80, 80, 80, 0.2), 0 0 5px rgba(0, 0, 0, 0.3)'
+          : 'none',
+        border: isActive 
+          ? '1px solid rgba(80, 80, 80, 0.6)' 
+          : '1px solid transparent',
+        color: isActive ? '#ffffff' : '#a1a1aa',
+        textShadow: isActive ? '0 1px 2px rgba(0, 0, 0, 0.5)' : 'none',
+        transform: isActive ? 'translateY(1px)' : 'none',
+      }}
     >
-      {children}
+      {/* Inner lighting effects */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-md">
+        {/* Top reflection */}
+        <div 
+          className="absolute inset-x-0 top-0 h-1/4"
+          style={{
+            background: 'linear-gradient(to bottom, rgba(255,255,255,0.05), transparent)',
+            opacity: isActive ? 0.05 : 0
+          }}
+        />
+        
+        {/* Bottom shadow */}
+        <div 
+          className="absolute inset-x-0 bottom-0 h-1/4"
+          style={{
+            background: 'linear-gradient(to top, rgba(0,0,0,0.2), transparent)',
+            opacity: isActive ? 0.3 : 0
+          }}
+        />
+      </div>
+      
+      {/* Content with 3D effect when active */}
+      <span className={`relative z-10 ${isActive ? 'text-3d' : ''}`}>{children}</span>
     </button>
   );
 };
