@@ -1,124 +1,227 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import LED from '@/components/ui/led';
-import { Slider } from '@/components/ui/slider';
 
 interface TransportControlsProps {
   isPlaying: boolean;
-  onPlayPause: () => void;
-  showRecord?: boolean;
+  onPlay: () => void;
+  onStop: () => void;
   onRecord?: () => void;
-  isRecording?: boolean;
+  onMetronome?: () => void;
   tempo?: number;
   onTempoChange?: (tempo: number) => void;
-  volume?: number;
-  onVolumeChange?: (volume: number) => void;
-  showResetButton?: boolean;
-  onReset?: () => void;
-  showSaveButton?: boolean;
-  onSave?: () => void;
+  isRecording?: boolean;
+  isMetronomeOn?: boolean;
   className?: string;
 }
 
 export const TransportControls: React.FC<TransportControlsProps> = ({
   isPlaying,
-  onPlayPause,
-  showRecord = false,
-  onRecord = () => {},
-  isRecording = false,
-  tempo,
+  onPlay,
+  onStop,
+  onRecord,
+  onMetronome,
+  tempo = 120,
   onTempoChange,
-  volume,
-  onVolumeChange,
-  showResetButton = false,
-  onReset = () => {},
-  showSaveButton = false,
-  onSave = () => {},
+  isRecording = false,
+  isMetronomeOn = false,
   className = '',
 }) => {
+  const [tempoBpm, setTempoBpm] = useState(tempo);
+  const [isEditingTempo, setIsEditingTempo] = useState(false);
+  const [currentBeat, setCurrentBeat] = useState(1);
+  const [tempoInputValue, setTempoInputValue] = useState(tempo.toString());
+  
+  // Handle beat counter when playing
+  useEffect(() => {
+    let intervalId: number;
+    
+    if (isPlaying) {
+      // Calculate beat duration in milliseconds (60000ms / BPM)
+      const beatDuration = 60000 / tempoBpm;
+      
+      intervalId = window.setInterval(() => {
+        setCurrentBeat(prev => (prev % 4) + 1); // 1-4 counter
+      }, beatDuration);
+    } else {
+      setCurrentBeat(1);
+    }
+    
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [isPlaying, tempoBpm]);
+  
+  // Handle tempo changes
+  const handleTempoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTempoInputValue(e.target.value);
+  };
+  
+  const handleTempoBlur = () => {
+    const newTempo = parseInt(tempoInputValue, 10);
+    
+    if (!isNaN(newTempo) && newTempo >= 20 && newTempo <= 300) {
+      setTempoBpm(newTempo);
+      if (onTempoChange) {
+        onTempoChange(newTempo);
+      }
+    } else {
+      // Reset to current tempo if invalid
+      setTempoInputValue(tempoBpm.toString());
+    }
+    
+    setIsEditingTempo(false);
+  };
+  
+  const handleTempoKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleTempoBlur();
+    } else if (e.key === 'Escape') {
+      setTempoInputValue(tempoBpm.toString());
+      setIsEditingTempo(false);
+    }
+  };
+  
+  // Transport button icons
+  const PlayIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="5 3 19 12 5 21 5 3"></polygon>
+    </svg>
+  );
+  
+  const StopIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+    </svg>
+  );
+  
+  const RecordIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="8"></circle>
+    </svg>
+  );
+  
+  const MetronomeIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 2h8l4 10-4 10H8L4 12z"></path>
+      <path d="M12 6v14"></path>
+    </svg>
+  );
+  
   return (
-    <div className={`flex justify-between items-center ${className}`}>
-      <div className="flex items-center space-x-4">
-        <Button
-          onClick={onPlayPause}
-          className={`${
-            isPlaying ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'
-          } text-white !rounded-button whitespace-nowrap px-8`}
-        >
-          <i className={`fa-solid ${isPlaying ? 'fa-stop' : 'fa-play'} mr-2`}></i>
-          {isPlaying ? 'STOP' : 'PLAY'}
-        </Button>
-        
-        {showRecord && (
+    <div className={`bg-zinc-900 rounded-xl p-4 border border-zinc-800 ${className}`}>
+      <div className="flex items-center justify-between flex-wrap">
+        <div className="flex space-x-2">
+          <Button
+            variant={isPlaying ? "outline" : "default"}
+            size="icon"
+            onClick={onPlay}
+            className={isPlaying ? "bg-green-900/30 text-green-400 hover:text-green-50 border-green-700" : ""}
+          >
+            <PlayIcon />
+          </Button>
+          
           <Button 
             variant="outline" 
-            className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap px-6"
-            onClick={onRecord}
+            size="icon"
+            onClick={onStop}
           >
-            <i className="fa-solid fa-record-vinyl mr-2"></i>
-            REC
+            <StopIcon />
           </Button>
-        )}
-        
-        <div className="flex items-center space-x-2">
-          <LED active={isPlaying} color="green" />
-          <span className="text-sm text-zinc-400">{isPlaying ? 'Running' : 'Signal'}</span>
+          
+          {onRecord && (
+            <Button
+              variant={isRecording ? "outline" : "outline"}
+              size="icon"
+              onClick={onRecord}
+              className={isRecording ? "bg-red-900/30 text-red-400 hover:text-red-50 border-red-700" : ""}
+            >
+              <RecordIcon />
+            </Button>
+          )}
+          
+          {onMetronome && (
+            <Button
+              variant={isMetronomeOn ? "outline" : "outline"}
+              size="icon"
+              onClick={onMetronome}
+              className={isMetronomeOn ? "bg-blue-900/30 text-blue-400 hover:text-blue-50 border-blue-700" : ""}
+            >
+              <MetronomeIcon />
+            </Button>
+          )}
         </div>
-      </div>
-      
-      <div className="flex items-center space-x-4">
-        {tempo !== undefined && onTempoChange && (
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-zinc-400">BPM</span>
-            <input
-              type="number"
-              className="w-16 bg-zinc-800 border border-zinc-700 rounded-md text-center text-zinc-300 border-none"
-              value={tempo}
-              onChange={(e) => onTempoChange(parseInt(e.target.value))}
-            />
-          </div>
-        )}
         
-        {volume !== undefined && onVolumeChange && (
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-zinc-400">Master</span>
-            <div className="w-24">
-              <Slider
-                value={[volume]}
-                onValueChange={(values) => onVolumeChange(values[0])}
-                max={100}
-                step={1}
-              />
-            </div>
-            <span className="text-sm text-zinc-400">{volume}%</span>
+        <div className="flex items-center space-x-4">
+          {/* Beat counter */}
+          <div className="flex space-x-1">
+            {[1, 2, 3, 4].map(beat => (
+              <div 
+                key={`beat-${beat}`} 
+                className={`w-2 h-2 rounded-full ${
+                  isPlaying && beat === currentBeat 
+                    ? 'bg-green-500' 
+                    : beat === 1 
+                      ? 'bg-zinc-400' 
+                      : 'bg-zinc-700'
+                }`}
+              ></div>
+            ))}
           </div>
-        )}
-        
-        {(showResetButton || showSaveButton) && (
-          <div className="flex items-center space-x-2">
-            {showResetButton && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap"
-                onClick={onReset}
-              >
-                <i className="fa-solid fa-rotate-left"></i>
-              </Button>
-            )}
+          
+          {/* Tempo */}
+          <div className="flex items-center">
+            <span className="text-zinc-400 text-xs mr-2">BPM</span>
             
-            {showSaveButton && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap"
-                onClick={onSave}
+            {isEditingTempo ? (
+              <input
+                type="text"
+                value={tempoInputValue}
+                onChange={handleTempoChange}
+                onBlur={handleTempoBlur}
+                onKeyDown={handleTempoKeyDown}
+                className="w-12 bg-zinc-800 text-zinc-100 rounded px-1 text-center text-sm border border-zinc-700 focus:border-purple-500 focus:outline-none"
+                autoFocus
+              />
+            ) : (
+              <div
+                onClick={() => setIsEditingTempo(true)}
+                className="w-12 bg-zinc-800 text-zinc-100 rounded px-1 text-center text-sm border border-zinc-700 cursor-pointer hover:border-zinc-600"
               >
-                <i className="fa-solid fa-floppy-disk"></i>
-              </Button>
+                {tempoBpm}
+              </div>
             )}
           </div>
-        )}
+          
+          {/* Tempo adjustment buttons */}
+          <div className="flex flex-col">
+            <button
+              className="text-zinc-400 hover:text-zinc-100 focus:outline-none h-3"
+              onClick={() => {
+                const newTempo = Math.min(300, tempoBpm + 1);
+                setTempoBpm(newTempo);
+                setTempoInputValue(newTempo.toString());
+                if (onTempoChange) onTempoChange(newTempo);
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="18 15 12 9 6 15"></polyline>
+              </svg>
+            </button>
+            <button
+              className="text-zinc-400 hover:text-zinc-100 focus:outline-none h-3"
+              onClick={() => {
+                const newTempo = Math.max(20, tempoBpm - 1);
+                setTempoBpm(newTempo);
+                setTempoInputValue(newTempo.toString());
+                if (onTempoChange) onTempoChange(newTempo);
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
