@@ -37,7 +37,3 @@ for (const [script, command] of Object.entries(packageJson.scripts || {})) {
 // Check for node_modules directory
 const nodeModulesExists = fs.existsSync(path.join(process.cwd(), 'node_modules'));
 console.log(`node_modules directory: ${nodeModulesExists ? '✓ Found' : '❌ Missing'}`);
-
-// Check for src/lib/components directory
-const componentsDirExists = fs.existsSync(path.join(process.cwd(), 'src/lib/components'));
-console.log(`src/lib/components directory: ${componentsDirExists ? '✓ Found' : '❌ Missing'}`);
