@@ -1,4 +1,3 @@
-// The exported code uses Tailwind CSS. Install Tailwind CSS in your dev environment to ensure all styles work.
 import React, { useState, useEffect, useRef } from 'react';
 import * as echarts from 'echarts';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -14,6 +13,8 @@ import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import 'swiper/css';
 import 'swiper/css/pagination';
+import Knob from 'web/src/lib/components/Knob.svelte'; // Import Knob component
+
 const App: React.FC = () => {
 const [activePreset, setActivePreset] = useState(0);
 const [isPlaying, setIsPlaying] = useState(false);
@@ -235,46 +236,6 @@ initSpectrumChart();
 }, []);
 const handlePlayPause = () => {
 setIsPlaying(!isPlaying);
-};
-const Knob: React.FC<{
-value: number;
-onChange: (value: number) => void;
-label: string;
-min?: number;
-max?: number;
-size?: 'sm' | 'md' | 'lg';
-color?: string;
-}> = ({ value, onChange, label, min = 0, max = 100, size = 'md', color = '#4ade80' }) => {
-const knobSize = {
-sm: 'w-16 h-16',
-md: 'w-20 h-20',
-lg: 'w-24 h-24',
-}[size];
-const rotation = ((value - min) / (max - min)) * 270 - 135;
-return (
-<div className="flex flex-col items-center">
-<div className={`${knobSize} relative cursor-pointer`}>
-<div className="absolute inset-0 rounded-full bg-zinc-800 border border-zinc-700 shadow-lg flex items-center justify-center">
-<div
-className="absolute w-full h-full rounded-full"
-style={{
-background: `conic-gradient(${color} 0deg, ${color} ${(value / 100) * 270}deg, rgba(39, 39, 42, 0.3) ${(value / 100) * 270}deg, rgba(39, 39, 42, 0.3) 270deg, rgba(39, 39, 42, 0) 270deg, rgba(39, 39, 42, 0) 360deg)`,
-clipPath: 'circle(47% at center)',
-transform: 'rotate(-135deg)'
-}}
-/>
-<div className="absolute w-[85%] h-[85%] rounded-full bg-zinc-900 flex items-center justify-center shadow-inner">
-<div
-className="absolute w-1 h-[40%] bg-zinc-400 rounded-full top-[10%]"
-style={{ transform: `rotate(${rotation}deg)` }}
-/>
-</div>
-</div>
-</div>
-<div className="mt-2 text-xs text-zinc-400 font-medium">{label}</div>
-<div className="text-xs text-zinc-300">{value}</div>
-</div>
-);
 };
 const Pad: React.FC<{
 active: boolean;
