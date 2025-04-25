@@ -5,15 +5,30 @@ import { Pagination, Autoplay } from 'swiper/modules';
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import 'swiper/css';
 import 'swiper/css/pagination';
+
+// Import alle Komponenten
 import Knob from '@/components/KnobWrapper';
+import LED from '@/components/ui/led';
+import Pad from '@/components/ui/pad';
+import XYPad from '@/components/ui/xy-pad';
+import DrumPad from '@/components/ui/drum-pad';
+import WaveformDisplay from '@/components/WaveformDisplay';
+import StepSequencer from '@/components/StepSequencer';
+import TrackList from '@/components/TrackList';
+import FeatureCard from '@/components/FeatureCard';
+import PresetCard from '@/components/PresetCard';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import EffectPanel from '@/components/EffectPanel';
+import TransportControls from '@/components/TransportControls';
+import TestimonialCard from '@/components/TestimonialCard';
+import HeroSection from '@/components/HeroSection';
+import CallToActionSection from '@/components/CallToActionSection';
+import SynthPadGrid from '@/components/SynthPadGrid';
 
 const App: React.FC = () => {
 const [activePreset, setActivePreset] = useState(0);
@@ -237,115 +252,49 @@ initSpectrumChart();
 const handlePlayPause = () => {
 setIsPlaying(!isPlaying);
 };
-const Pad: React.FC<{
-active: boolean;
-onClick: () => void;
-size?: 'sm' | 'md' | 'lg';
-}> = ({ active, onClick, size = 'md' }) => {
-const padSize = {
-sm: 'w-8 h-8',
-md: 'w-12 h-12',
-lg: 'w-16 h-16',
-}[size];
-return (
-<div
-className={`${padSize} rounded-md relative cursor-pointer transition-all duration-200 ${active ? 'bg-purple-900/50' : 'bg-zinc-800'}`}
-onClick={onClick}
->
-<div className={`absolute inset-0 rounded-md ${active ? 'bg-purple-500/20' : 'bg-transparent'} shadow-lg border border-zinc-700`}>
-<div className={`absolute inset-0 flex items-center justify-center ${active ? 'opacity-100' : 'opacity-0'} transition-opacity duration-200`}>
-<div className={`w-3 h-3 rounded-full ${active ? 'bg-purple-400' : 'bg-transparent'} shadow-lg shadow-purple-500/50`} />
-</div>
-</div>
-</div>
-);
-};
-const LED: React.FC<{
-active: boolean;
-color?: string;
-size?: 'xs' | 'sm' | 'md';
-}> = ({ active, color = 'green', size = 'sm' }) => {
-const ledSize = {
-xs: 'w-1.5 h-1.5',
-sm: 'w-2 h-2',
-md: 'w-3 h-3',
-}[size];
-const ledColor = {
-green: active ? 'bg-green-400 shadow-green-400/50' : 'bg-green-900/30',
-red: active ? 'bg-red-400 shadow-red-400/50' : 'bg-red-900/30',
-blue: active ? 'bg-blue-400 shadow-blue-400/50' : 'bg-blue-900/30',
-purple: active ? 'bg-purple-400 shadow-purple-400/50' : 'bg-purple-900/30',
-}[color];
-return (
-<div className={`${ledSize} rounded-full ${ledColor} ${active ? 'shadow-lg' : ''} transition-all duration-200`} />
-);
-};
+
+// Erstellen von Pad-Daten für SynthPadGrid
+const padData = Array.from({ length: 16 }).map((_, index) => ({
+id: index,
+active: activeSequence[index],
+type: ['BD', 'SD', 'HH', 'CP'][index % 4],
+velocity: 127,
+tuning: 0
+}));
+
+const testimonials = [
+{
+rating: 5,
+text: "The ARythm-EMU 2050 has completely transformed my production workflow. The sound quality is unmatched and the interface is incredibly intuitive.",
+authorName: "Alex Thompson",
+authorRole: "Electronic Music Producer"
+},
+{
+rating: 5,
+text: "I've used many synthesizers over the years, but the ARythm-EMU 2050 stands out with its incredible sound design capabilities and forward-thinking interface.",
+authorName: "Sarah Chen",
+authorRole: "Film Composer"
+},
+{
+rating: 4.5,
+text: "The modulation matrix and sequencer in the ARythm-EMU 2050 are game-changers. I can create sounds I never thought possible before.",
+authorName: "Marcus Williams",
+authorRole: "Sound Designer"
+},
+{
+rating: 5,
+text: "The ARythm-EMU 2050 has become the centerpiece of my studio. The sound quality and flexibility are unparalleled in the digital synthesis world.",
+authorName: "Olivia Rodriguez",
+authorRole: "Studio Producer"
+}
+];
+
 return (
 <div className="min-h-screen bg-zinc-900 text-zinc-100">
-<header className="border-b border-zinc-800 bg-zinc-900">
-<div className="container mx-auto px-4 py-4 flex items-center justify-between">
-<div className="flex items-center space-x-2">
-<div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
-<i className="fa-solid fa-waveform-path text-white text-sm"></i>
-</div>
-<div className="font-bold text-xl tracking-tight">ARythm-EMU 2050</div>
-</div>
-<nav className="hidden md:flex items-center space-x-8">
-<a href="#" className="text-zinc-300 hover:text-white transition-colors cursor-pointer">Home</a>
-<a href="#" className="text-zinc-300 hover:text-white transition-colors cursor-pointer">Features</a>
-<a href="#" className="text-zinc-300 hover:text-white transition-colors cursor-pointer">Presets</a>
-<a href="#" className="text-zinc-300 hover:text-white transition-colors cursor-pointer">Documentation</a>
-<a href="#" className="text-zinc-300 hover:text-white transition-colors cursor-pointer">Support</a>
-</nav>
-<div className="flex items-center space-x-4">
-<Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">
-<i className="fa-solid fa-download mr-2"></i>
-Download
-</Button>
-<Button className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white !rounded-button whitespace-nowrap">
-Try Online
-</Button>
-</div>
-</div>
-</header>
+<Header />
+
 <main className="container mx-auto px-4 py-12">
-<section className="mb-16">
-<div className="flex flex-col md:flex-row items-center">
-<div className="md:w-1/2 mb-8 md:mb-0 md:pr-8">
-<h1 className="text-4xl md:text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-indigo-400 to-purple-400">
-Next Generation Audio Synthesis
-</h1>
-<p className="text-xl text-zinc-400 mb-8">
-Experience unparalleled sound design capabilities with our cutting-edge digital synthesizer. Craft sounds from the future, today.
-</p>
-<div className="flex flex-wrap gap-4">
-<Button className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-8 py-6 text-lg !rounded-button whitespace-nowrap">
-<i className="fa-solid fa-play mr-2"></i>
-Start Creating
-</Button>
-<Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white px-8 py-6 text-lg !rounded-button whitespace-nowrap">
-<i className="fa-solid fa-headphones mr-2"></i>
-Listen to Demos
-</Button>
-</div>
-</div>
-<div className="md:w-1/2">
-<div className="relative">
-<img
-src="https://readdy.ai/api/search-image?query=Futuristic%20professional%20audio%20synthesizer%20with%20glowing%20purple%20and%20green%20LED%20interface%2C%20digital%20display%20screen%2C%20multiple%20control%20knobs%20and%20buttons%2C%20sleek%20metallic%20finish%2C%20high-tech%20music%20production%20equipment%20against%20dark%20background%2C%20photorealistic%20product%20shot&width=600&height=400&seq=1&orientation=landscape"
-alt="ARythm-EMU 2050 Synthesizer"
-className="rounded-lg shadow-2xl shadow-purple-500/10 w-full object-cover object-top"
-/>
-<div className="absolute -bottom-4 -right-4 bg-zinc-800 rounded-lg px-4 py-2 shadow-lg">
-<div className="flex items-center space-x-2">
-<LED active={true} color="green" />
-<span className="text-sm font-medium">Available Now</span>
-</div>
-</div>
-</div>
-</div>
-</div>
-</section>
+<HeroSection />
 <section className="mb-16">
 <div className="text-center mb-12">
 <h2 className="text-3xl font-bold mb-4">Key Features</h2>
@@ -355,20 +304,16 @@ ARythm-EMU 2050 combines advanced digital synthesis with intuitive controls, giv
 </div>
 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 {features.map((feature, index) => (
-<Card key={index} className="bg-zinc-800/50 border-zinc-700">
-<CardHeader>
-<div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500/20 to-indigo-500/20 flex items-center justify-center mb-4">
-<i className={`${feature.icon} text-purple-400 text-xl`}></i>
-</div>
-<CardTitle>{feature.title}</CardTitle>
-</CardHeader>
-<CardContent>
-<p className="text-zinc-400">{feature.description}</p>
-</CardContent>
-</Card>
+<FeatureCard
+key={index}
+title={feature.title}
+description={feature.description}
+icon={feature.icon}
+/>
 ))}
 </div>
 </section>
+
 <section className="mb-16">
 <div className="bg-zinc-800/30 rounded-2xl p-8 border border-zinc-700/50">
 <div className="text-center mb-8">
@@ -377,84 +322,33 @@ ARythm-EMU 2050 combines advanced digital synthesis with intuitive controls, giv
 Get a feel for the ARythm-EMU 2050 interface with our interactive demo. Adjust parameters and see how they affect the sound.
 </p>
 </div>
+
 <Tabs defaultValue="synth" className="w-full" onValueChange={setActiveTab}>
 <TabsList className="grid grid-cols-3 mb-8">
 <TabsTrigger value="synth" className="!rounded-button whitespace-nowrap">Synthesizer</TabsTrigger>
 <TabsTrigger value="sequencer" className="!rounded-button whitespace-nowrap">Sequencer</TabsTrigger>
 <TabsTrigger value="effects" className="!rounded-button whitespace-nowrap">Effects</TabsTrigger>
 </TabsList>
+
 <TabsContent value="synth" className="mt-0">
 <div className="grid grid-cols-1 gap-8">
 <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800">
-<div className="flex justify-between items-center mb-6">
-<div className="flex items-center space-x-4">
-<Button
-onClick={handlePlayPause}
-className={`${isPlaying ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} text-white !rounded-button whitespace-nowrap px-8`}
->
-<i className={`fa-solid ${isPlaying ? 'fa-stop' : 'fa-play'} mr-2`}></i>
-{isPlaying ? 'STOP' : 'PLAY'}
-</Button>
-<Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap px-6">
-<i className="fa-solid fa-record-vinyl mr-2"></i>
-REC
-</Button>
-<div className="flex items-center space-x-2">
-<LED active={isPlaying} color="green" />
-<span className="text-sm text-zinc-400">Signal</span>
-</div>
-</div>
-<div className="flex items-center space-x-2">
-<span className="text-sm text-zinc-400">Master</span>
-<div className="w-24">
-<Slider
-value={[volume]}
-onValueChange={(values) => setVolume(values[0])}
-max={100}
-step={1}
+<TransportControls
+isPlaying={isPlaying}
+onPlayPause={handlePlayPause}
+showRecord={true}
+volume={volume}
+onVolumeChange={setVolume}
+className="mb-6"
 />
-</div>
-<span className="text-sm text-zinc-400">{volume}%</span>
-</div>
-</div>
+
 <div className="grid grid-cols-1 gap-8">
-<div className="grid grid-cols-4 gap-4">
-{Array.from({ length: 16 }).map((_, index) => (
-<div
-key={index}
-className={`aspect-square bg-zinc-800 rounded-lg border-2 ${activeSequence[index] ? 'border-purple-500 bg-purple-900/20' : 'border-zinc-700'} p-2 cursor-pointer transition-all duration-200 hover:border-purple-400 relative group`}
-onClick={() => toggleSequenceStep(index)}
->
-<div className="flex flex-col h-full justify-between">
-<div className="flex justify-between items-start">
-<div className="flex flex-col">
-<span className="text-xs text-zinc-500">PAD {index + 1}</span>
-<span className="text-[10px] text-zinc-600">{['BD', 'SD', 'HH', 'CP'][index % 4]}</span>
-</div>
-<div className="flex flex-col items-end space-y-1">
-<LED active={activeSequence[index]} color="purple" />
-<LED active={index === 0} color="green" size="xs" />
-</div>
-</div>
-<div className="text-center text-2xl text-zinc-400 relative">
-<i className="fa-solid fa-drum"></i>
-<div className="absolute inset-0 bg-gradient-to-t from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
-</div>
-<div className="flex justify-between items-end">
-<div className="flex flex-col items-start">
-<span className="text-[10px] text-zinc-600">VEL</span>
-<span className="text-xs text-zinc-400">127</span>
-</div>
-<div className="flex flex-col items-end">
-<span className="text-[10px] text-zinc-600">TUNE</span>
-<span className="text-xs text-zinc-400">0</span>
-</div>
-</div>
-</div>
-<div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-purple-500/0 via-purple-500/50 to-purple-500/0 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
-</div>
-))}
-</div>
+<SynthPadGrid 
+pads={padData} 
+onTogglePad={(id) => toggleSequenceStep(id)} 
+currentStep={0}
+/>
+
 <div className="mt-8 bg-zinc-800/30 rounded-xl p-6 border border-zinc-700">
 <div className="flex justify-between items-center mb-6">
 <h3 className="text-lg font-medium">Step Sequencer</h3>
@@ -469,31 +363,14 @@ Clone
 </Button>
 </div>
 </div>
-<div className="grid grid-cols-16 gap-1">
-{Array.from({ length: 16 }).map((_, i) => (
-<div key={i} className="flex flex-col space-y-2">
-<div className="text-xs text-zinc-500 text-center">{i + 1}</div>
-{Array.from({ length: 8 }).map((_, j) => (
-<div
-key={j}
-className={`h-8 bg-zinc-800 border ${i % 4 === 0 ? 'border-zinc-600' : 'border-zinc-700'} rounded cursor-pointer hover:bg-zinc-700 transition-colors ${j === 0 && i % 4 === 0 ? 'bg-purple-900/20 border-purple-500' : ''}`}
->
-<div className="h-full flex flex-col justify-between p-1">
-<div className="flex justify-between">
-<LED active={j === 0 && i % 4 === 0} color="purple" size="xs" />
-<LED active={false} color="green" size="xs" />
+
+<StepSequencer
+steps={activeSequence}
+onToggleStep={toggleSequenceStep}
+currentStep={0}
+/>
 </div>
-<div className="flex justify-between">
-<span className="text-[8px] text-zinc-500">{j === 0 ? '127' : ''}</span>
-<span className="text-[8px] text-zinc-500">{j === 0 ? '+0' : ''}</span>
-</div>
-</div>
-</div>
-))}
-</div>
-))}
-</div>
-</div>
+
 <div className="flex justify-between items-center">
 <div className="flex space-x-2 items-center">
 <LED active={true} color="green" />
@@ -506,10 +383,11 @@ className={`h-8 bg-zinc-800 border ${i % 4 === 0 ? 'border-zinc-600' : 'border-z
 </div>
 </div>
 </div>
+
 <div>
 <div className="mb-4">
 <h3 className="text-sm text-zinc-400 mb-2">Spectrum</h3>
-<div ref={spectrumChartRef} className="h-32 w-full bg-zinc-800/50 rounded-lg"></div>
+<WaveformDisplay type="spectrum" height={128} />
 </div>
 <div className="flex justify-between items-center">
 <div className="flex space-x-2 items-center">
@@ -527,6 +405,7 @@ className={`h-8 bg-zinc-800 border ${i % 4 === 0 ? 'border-zinc-600' : 'border-z
 </div>
 </div>
 </div>
+
 <div className="grid grid-cols-2 gap-8 mt-8">
 <div>
 <h3 className="text-sm text-zinc-400 mb-4">Track Parameters</h3>
@@ -602,88 +481,40 @@ color="#a855f7"
 </div>
 </div>
 </TabsContent>
+
 <TabsContent value="sequencer" className="mt-0">
 <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800">
 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 {/* Track List and Controls */}
 <div className="lg:col-span-3 bg-zinc-800/50 rounded-lg p-4">
 <h3 className="text-sm font-medium mb-4">Tracks</h3>
-<div className="space-y-2">
-{tracks.map((track, index) => (
-<div
-key={index}
-className={`flex items-center justify-between p-2 rounded-lg ${
-selectedTrack === index ? 'bg-purple-900/30 border border-purple-500/50' : 'bg-zinc-800'
-} cursor-pointer hover:bg-zinc-700 transition-colors`}
-onClick={() => setSelectedTrack(index)}
->
-<div className="flex items-center space-x-2">
-<i className={`fa-solid ${track.icon} text-${track.color}-400`}></i>
-<span className="text-sm">{track.name}</span>
-</div>
-<div className="flex items-center space-x-2">
-<Button
-size="sm"
-variant="ghost"
-className={`px-2 ${trackMutes[index] ? 'bg-red-500/20 text-red-400' : 'text-zinc-400'} hover:text-white !rounded-button whitespace-nowrap`}
-onClick={(e) => {
-e.stopPropagation();
+<TrackList
+tracks={tracks}
+selectedTrack={selectedTrack}
+mutes={trackMutes}
+solos={trackSolos}
+onSelectTrack={setSelectedTrack}
+onToggleMute={(index) => {
 const newMutes = [...trackMutes];
 newMutes[index] = !newMutes[index];
 setTrackMutes(newMutes);
 }}
->
-M
-</Button>
-<Button
-size="sm"
-variant="ghost"
-className={`px-2 ${trackSolos[index] ? 'bg-yellow-500/20 text-yellow-400' : 'text-zinc-400'} hover:text-white !rounded-button whitespace-nowrap`}
-onClick={(e) => {
-e.stopPropagation();
+onToggleSolo={(index) => {
 const newSolos = [...trackSolos];
 newSolos[index] = !newSolos[index];
 setTrackSolos(newSolos);
 }}
->
-S
-</Button>
-</div>
-</div>
-))}
-</div>
+/>
 </div>
 {/* Step Sequencer */}
 <div className="lg:col-span-9 bg-zinc-800/50 rounded-lg p-4">
-<div className="flex justify-between items-center mb-4">
-<div className="flex items-center space-x-4">
-<Button
-onClick={handlePlayPause}
-className={`${isPlaying ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} text-white !rounded-button whitespace-nowrap`}
->
-<i className={`fa-solid ${isPlaying ? 'fa-stop' : 'fa-play'} mr-2`}></i>
-{isPlaying ? 'Stop' : 'Play'}
-</Button>
-<div className="flex items-center space-x-2">
-<span className="text-sm">BPM</span>
-<input
-type="number"
-className="w-16 bg-zinc-800 border border-zinc-700 rounded text-center"
-value="120"
+<TransportControls
+isPlaying={isPlaying}
+onPlayPause={handlePlayPause}
+tempo={tempo}
+onTempoChange={setTempo}
+className="mb-4"
 />
-</div>
-</div>
-<div className="flex items-center space-x-2">
-<Button variant="outline" size="sm" className="border-zinc-700 !rounded-button whitespace-nowrap">
-<i className="fa-solid fa-copy mr-2"></i>
-Copy
-</Button>
-<Button variant="outline" size="sm" className="border-zinc-700 !rounded-button whitespace-nowrap">
-<i className="fa-solid fa-paste mr-2"></i>
-Paste
-</Button>
-</div>
-</div>
 {/* Step Grid */}
 <div className="grid grid-cols-16 gap-1 mb-4">
 {Array.from({ length: 16 }).map((_, stepIndex) => (
@@ -763,23 +594,10 @@ step={1}
 {/* XY Pad */}
 <div className="lg:col-span-4 bg-zinc-800/50 rounded-lg p-4">
 <h3 className="text-sm font-medium mb-4">XY Performance Pad</h3>
-<div
-className="aspect-square bg-zinc-900 rounded-lg border border-zinc-700 relative cursor-pointer"
-onMouseMove={(e) => {
-const rect = e.currentTarget.getBoundingClientRect();
-const x = ((e.clientX - rect.left) / rect.width) * 100;
-const y = ((e.clientY - rect.top) / rect.height) * 100;
-setXyPad({ x, y });
-}}
->
-<div
-className="absolute w-4 h-4 bg-purple-500 rounded-full transform -translate-x-1/2 -translate-y-1/2"
-style={{ left: `${xyPad.x}%`, top: `${xyPad.y}%` }}
->
-<div className="absolute inset-0 bg-purple-500 rounded-full animate-ping opacity-75"></div>
-</div>
-<div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-indigo-500/5"></div>
-</div>
+<XYPad
+value={xyPad}
+onChange={setXyPad}
+/>
 </div>
 {/* LFO Controls */}
 <div className="lg:col-span-4 bg-zinc-800/50 rounded-lg p-4">
@@ -828,61 +646,29 @@ onClick={() => setLfoShape(shape)}
 <h3 className="text-sm font-medium mb-4">Drum Pads</h3>
 <div className="grid grid-cols-4 gap-2">
 {drumPadSounds.map((sound, index) => (
-<div
+<DrumPad
 key={index}
-className={`aspect-square bg-zinc-800 rounded-lg border border-${sound.color}-500/50 p-2 cursor-pointer hover:bg-${sound.color}-900/20 transition-colors`}
->
-<div className="h-full flex flex-col justify-between">
-<div className="flex justify-between items-start">
-<span className="text-xs text-zinc-400">{sound.name}</span>
-<LED active={false} color={sound.color} />
-</div>
-<div className="text-center">
-<i className={`fa-solid ${sound.icon || 'fa-drum'} text-${sound.color}-400 text-xl`}></i>
-</div>
-</div>
-</div>
+name={sound.name}
+category={sound.category}
+color={sound.color}
+icon={sound.icon || 'fa-drum'}
+/>
 ))}
 </div>
 </div>
 </div>
-<div className="flex justify-between items-center mb-6">
-<div className="flex items-center space-x-4">
-<Button
-onClick={handlePlayPause}
-className={`${isPlaying ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} text-white !rounded-button whitespace-nowrap px-8`}
->
-<i className={`fa-solid ${isPlaying ? 'fa-stop' : 'fa-play'} mr-2`}></i>
-{isPlaying ? 'STOP' : 'PLAY'}
-</Button>
-<Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap px-6">
-<i className="fa-solid fa-record-vinyl mr-2"></i>
-REC
-</Button>
-<div className="flex items-center space-x-2">
-<LED active={isPlaying} color="green" />
-<span className="text-sm text-zinc-400">Running</span>
-</div>
-</div>
-<div className="flex items-center space-x-4">
-<div className="flex items-center space-x-2">
-<span className="text-sm text-zinc-400">BPM</span>
-<input
-type="number"
-className="w-16 bg-zinc-800 border border-zinc-700 rounded-md text-center text-zinc-300 border-none"
-value="120"
+
+<TransportControls
+isPlaying={isPlaying}
+onPlayPause={handlePlayPause}
+showRecord={true}
+tempo={tempo}
+onTempoChange={setTempo}
+showResetButton={true}
+showSaveButton={true}
+className="mb-6 mt-6"
 />
-</div>
-<div className="flex items-center space-x-2">
-<Button variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">
-<i className="fa-solid fa-rotate-left"></i>
-</Button>
-<Button variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">
-<i className="fa-solid fa-floppy-disk"></i>
-</Button>
-</div>
-</div>
-</div>
+
 <div className="bg-zinc-800/50 rounded-lg p-4 mb-6">
 <div className="grid grid-cols-16 gap-2">
 {Array.from({ length: 16 }).map((_, index) => (
@@ -906,6 +692,7 @@ className="h-20"
 ))}
 </div>
 </div>
+
 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 <div>
 <h3 className="text-sm text-zinc-400 mb-4">Step Parameters</h3>
@@ -1015,122 +802,59 @@ Randomize
 </div>
 </div>
 </TabsContent>
+
 <TabsContent value="effects" className="mt-0">
 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-<div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800">
-<h3 className="text-lg font-medium mb-4">Delay</h3>
-<div className="space-y-6">
-<div>
-<Knob
-value={delay}
-onChange={setDelay}
-label="Time"
+<EffectPanel
+title="Delay"
 color="#6366f1"
+parameters={[
+{ name: "Time", value: delay, onChange: setDelay },
+{ name: "Feedback", value: 40, onChange: () => {} },
+{ name: "Mix", value: 70, onChange: () => {} }
+]}
+toggles={[
+{ id: "sync", label: "Sync to Tempo", checked: true, onChange: () => {} }
+]}
 />
-</div>
-<div>
-<Knob
-value={40}
-onChange={() => {}}
-label="Feedback"
-color="#6366f1"
-/>
-</div>
-<div>
-<Knob
-value={70}
-onChange={() => {}}
-label="Mix"
-color="#6366f1"
-/>
-</div>
-<div className="pt-2">
-<div className="flex items-center space-x-2">
-<Switch id="sync" defaultChecked />
-<label htmlFor="sync" className="text-sm text-zinc-400 cursor-pointer">Sync to Tempo</label>
-</div>
-</div>
-</div>
-</div>
-<div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800">
-<h3 className="text-lg font-medium mb-4">Reverb</h3>
-<div className="space-y-6">
-<div>
-<Knob
-value={reverb}
-onChange={setReverb}
-label="Size"
+
+<EffectPanel
+title="Reverb"
 color="#ec4899"
+parameters={[
+{ name: "Size", value: reverb, onChange: setReverb },
+{ name: "Damping", value: 60, onChange: () => {} },
+{ name: "Mix", value: 35, onChange: () => {} }
+]}
+options={{
+name: "Type",
+value: ["Hall", "Room", "Plate", "Chamber"],
+selected: "Hall",
+onChange: () => {}
+}}
 />
-</div>
-<div>
-<Knob
-value={60}
-onChange={() => {}}
-label="Damping"
-color="#ec4899"
-/>
-</div>
-<div>
-<Knob
-value={35}
-onChange={() => {}}
-label="Mix"
-color="#ec4899"
-/>
-</div>
-<div className="pt-2">
-<select className="w-full bg-zinc-800 border border-zinc-700 rounded-md p-2 text-zinc-300 !rounded-button whitespace-nowrap">
-<option>Hall</option>
-<option>Room</option>
-<option>Plate</option>
-<option>Chamber</option>
-</select>
-</div>
-</div>
-</div>
-<div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800">
-<h3 className="text-lg font-medium mb-4">Modulation</h3>
-<div className="space-y-6">
-<div>
-<Knob
-value={modulation}
-onChange={setModulation}
-label="Rate"
+
+<EffectPanel
+title="Modulation"
 color="#0ea5e9"
+parameters={[
+{ name: "Rate", value: modulation, onChange: setModulation },
+{ name: "Depth", value: 50, onChange: () => {} },
+{ name: "Mix", value: 30, onChange: () => {} }
+]}
+buttons={[
+{ label: "Chorus", isActive: true, onClick: () => {} },
+{ label: "Phaser", isActive: false, onClick: () => {} },
+{ label: "Flanger", isActive: false, onClick: () => {} },
+{ label: "Tremolo", isActive: false, onClick: () => {} }
+]}
 />
-</div>
-<div>
-<Knob
-value={50}
-onChange={() => {}}
-label="Depth"
-color="#0ea5e9"
-/>
-</div>
-<div>
-<Knob
-value={30}
-onChange={() => {}}
-label="Mix"
-color="#0ea5e9"
-/>
-</div>
-<div className="pt-2">
-<div className="grid grid-cols-2 gap-2">
-<Button variant="outline" size="sm" className="border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white !rounded-button whitespace-nowrap">Chorus</Button>
-<Button variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">Phaser</Button>
-<Button variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">Flanger</Button>
-<Button variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">Tremolo</Button>
-</div>
-</div>
-</div>
-</div>
 </div>
 </TabsContent>
 </Tabs>
 </div>
 </section>
+
 <section className="mb-16">
 <div className="text-center mb-12">
 <h2 className="text-3xl font-bold mb-4">Sound Presets</h2>
@@ -1140,27 +864,14 @@ Explore our library of professionally designed presets to jumpstart your creativ
 </div>
 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 {presets.map((preset, index) => (
-<Card
+<PresetCard
 key={index}
-className={`bg-zinc-800/50 border-zinc-700 cursor-pointer transition-all duration-200 hover:bg-zinc-800 ${activePreset === index ? 'ring-2 ring-purple-500' : ''}`}
+name={preset.name}
+category={preset.category}
+isActive={activePreset === index}
 onClick={() => setActivePreset(index)}
->
-<CardHeader className="pb-2">
-<Badge className="self-start bg-zinc-700 text-zinc-300 hover:bg-zinc-700 !rounded-button whitespace-nowrap">{preset.category}</Badge>
-<CardTitle className="mt-2">{preset.name}</CardTitle>
-</CardHeader>
-<CardContent>
-<div className="flex items-center justify-between">
-<div className="flex items-center space-x-2">
-<LED active={activePreset === index} color="purple" />
-<span className="text-xs text-zinc-400">{activePreset === index ? 'Selected' : 'Select'}</span>
-</div>
-<Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white hover:bg-zinc-700 !rounded-button whitespace-nowrap">
-<i className="fa-solid fa-play"></i>
-</Button>
-</div>
-</CardContent>
-</Card>
+onPlay={() => {}}
+/>
 ))}
 </div>
 <div className="mt-8 text-center">
@@ -1170,35 +881,18 @@ Browse All Presets
 </Button>
 </div>
 </section>
-<section className="mb-16">
-<div className="bg-gradient-to-r from-purple-900/20 via-indigo-900/20 to-purple-900/20 rounded-2xl p-8 border border-purple-800/20">
-<div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-<div>
-<h2 className="text-3xl font-bold mb-4">Ready to Create Future Sounds?</h2>
-<p className="text-zinc-400 mb-6">
-Join thousands of music producers and sound designers who are already using ARythm-EMU 2050 to push the boundaries of audio creation.
-</p>
-<div className="flex flex-wrap gap-4">
-<Button className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white !rounded-button whitespace-nowrap">
-<i className="fa-solid fa-download mr-2"></i>
-Download Now
-</Button>
-<Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">
-<i className="fa-solid fa-book mr-2"></i>
-Read Documentation
-</Button>
-</div>
-</div>
-<div>
-<img
-src="https://readdy.ai/api/search-image?query=Futuristic%20music%20studio%20setup%20with%20glowing%20purple%20and%20green%20lights%2C%20professional%20audio%20equipment%2C%20synthesizers%20and%20controllers%2C%20dark%20atmospheric%20environment%2C%20high-tech%20music%20production%20workspace%20with%20digital%20displays%20and%20LED%20indicators&width=500&height=300&seq=2&orientation=landscape"
-alt="Music Production Studio"
-className="rounded-lg shadow-2xl shadow-purple-500/10 w-full object-cover object-top"
+
+<CallToActionSection 
+title="Ready to Create Future Sounds?"
+description="Join thousands of music producers and sound designers who are already using ARythm-EMU 2050 to push the boundaries of audio creation."
+primaryButtonText="Download Now"
+primaryButtonIcon="fa-download"
+secondaryButtonText="Read Documentation"
+secondaryButtonIcon="fa-book"
+imageSrc="https://readdy.ai/api/search-image?query=Futuristic%20music%20studio%20setup%20with%20glowing%20purple%20and%20green%20lights%2C%20professional%20audio%20equipment%2C%20synthesizers%20and%20controllers%2C%20dark%20atmospheric%20environment%2C%20high-tech%20music%20production%20workspace%20with%20digital%20displays%20and%20LED%20indicators&width=500&height=300&seq=2&orientation=landscape"
+imageAlt="Music Production Studio"
 />
-</div>
-</div>
-</div>
-</section>
+
 <section>
 <div className="text-center mb-12">
 <h2 className="text-3xl font-bold mb-4">Testimonials</h2>
@@ -1222,185 +916,22 @@ pagination={{ clickable: true }}
 autoplay={{ delay: 5000 }}
 className="pb-12"
 >
-<SwiperSlide>
-<Card className="bg-zinc-800/50 border-zinc-700 h-full">
-<CardContent className="pt-6">
-<div className="flex items-center mb-4">
-<i className="fa-solid fa-star text-yellow-500 mr-1"></i>
-<i className="fa-solid fa-star text-yellow-500 mr-1"></i>
-<i className="fa-solid fa-star text-yellow-500 mr-1"></i>
-<i className="fa-solid fa-star text-yellow-500 mr-1"></i>
-<i className="fa-solid fa-star text-yellow-500"></i>
-</div>
-<p className="text-zinc-300 mb-4">
-"The ARythm-EMU 2050 has completely transformed my production workflow. The sound quality is unmatched and the interface is incredibly intuitive."
-</p>
-<div className="flex items-center">
-<div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center mr-3">
-<i className="fa-solid fa-user text-white"></i>
-</div>
-<div>
-<div className="font-medium">Alex Thompson</div>
-<div className="text-xs text-zinc-400">Electronic Music Producer</div>
-</div>
-</div>
-</CardContent>
-</Card>
+{testimonials.map((testimonial, index) => (
+<SwiperSlide key={index}>
+<TestimonialCard 
+rating={testimonial.rating}
+text={testimonial.text}
+authorName={testimonial.authorName}
+authorRole={testimonial.authorRole}
+/>
 </SwiperSlide>
-<SwiperSlide>
-<Card className="bg-zinc-800/50 border-zinc-700 h-full">
-<CardContent className="pt-6">
-<div className="flex items-center mb-4">
-<i className="fa-solid fa-star text-yellow-500 mr-1"></i>
-<i className="fa-solid fa-star text-yellow-500 mr-1"></i>
-<i className="fa-solid fa-star text-yellow-500 mr-1"></i>
-<i className="fa-solid fa-star text-yellow-500 mr-1"></i>
-<i className="fa-solid fa-star text-yellow-500"></i>
-</div>
-<p className="text-zinc-300 mb-4">
-"I've used many synthesizers over the years, but the ARythm-EMU 2050 stands out with its incredible sound design capabilities and forward-thinking interface."
-</p>
-<div className="flex items-center">
-<div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center mr-3">
-<i className="fa-solid fa-user text-white"></i>
-</div>
-<div>
-<div className="font-medium">Sarah Chen</div>
-<div className="text-xs text-zinc-400">Film Composer</div>
-</div>
-</div>
-</CardContent>
-</Card>
-</SwiperSlide>
-<SwiperSlide>
-<Card className="bg-zinc-800/50 border-zinc-700 h-full">
-<CardContent className="pt-6">
-<div className="flex items-center mb-4">
-<i className="fa-solid fa-star text-yellow-500 mr-1"></i>
-<i className="fa-solid fa-star text-yellow-500 mr-1"></i>
-<i className="fa-solid fa-star text-yellow-500 mr-1"></i>
-<i className="fa-solid fa-star text-yellow-500 mr-1"></i>
-<i className="fa-solid fa-star-half-alt text-yellow-500"></i>
-</div>
-<p className="text-zinc-300 mb-4">
-"The modulation matrix and sequencer in the ARythm-EMU 2050 are game-changers. I can create sounds I never thought possible before."
-</p>
-<div className="flex items-center">
-<div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center mr-3">
-<i className="fa-solid fa-user text-white"></i>
-</div>
-<div>
-<div className="font-medium">Marcus Williams</div>
-<div className="text-xs text-zinc-400">Sound Designer</div>
-</div>
-</div>
-</CardContent>
-</Card>
-</SwiperSlide>
-<SwiperSlide>
-<Card className="bg-zinc-800/50 border-zinc-700 h-full">
-<CardContent className="pt-6">
-<div className="flex items-center mb-4">
-<i className="fa-solid fa-star text-yellow-500 mr-1"></i>
-<i className="fa-solid fa-star text-yellow-500 mr-1"></i>
-<i className="fa-solid fa-star text-yellow-500 mr-1"></i>
-<i className="fa-solid fa-star text-yellow-500 mr-1"></i>
-<i className="fa-solid fa-star text-yellow-500"></i>
-</div>
-<p className="text-zinc-300 mb-4">
-"The ARythm-EMU 2050 has become the centerpiece of my studio. The sound quality and flexibility are unparalleled in the digital synthesis world."
-</p>
-<div className="flex items-center">
-<div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center mr-3">
-<i className="fa-solid fa-user text-white"></i>
-</div>
-<div>
-<div className="font-medium">Olivia Rodriguez</div>
-<div className="text-xs text-zinc-400">Studio Producer</div>
-</div>
-</div>
-</CardContent>
-</Card>
-</SwiperSlide>
+))}
 </Swiper>
 </section>
 </main>
-<footer className="bg-zinc-900 border-t border-zinc-800 py-12">
-<div className="container mx-auto px-4">
-<div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-<div>
-<div className="flex items-center space-x-2 mb-4">
-<div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
-<i className="fa-solid fa-waveform-path text-white text-sm"></i>
-</div>
-<div className="font-bold text-xl tracking-tight">ARythm-EMU 2050</div>
-</div>
-<p className="text-zinc-400 mb-4">
-The future of sound design and music production, available today.
-</p>
-<div className="flex space-x-4">
-<a href="#" className="text-zinc-400 hover:text-white transition-colors">
-<i className="fa-brands fa-twitter text-lg"></i>
-</a>
-<a href="#" className="text-zinc-400 hover:text-white transition-colors">
-<i className="fa-brands fa-facebook text-lg"></i>
-</a>
-<a href="#" className="text-zinc-400 hover:text-white transition-colors">
-<i className="fa-brands fa-instagram text-lg"></i>
-</a>
-<a href="#" className="text-zinc-400 hover:text-white transition-colors">
-<i className="fa-brands fa-youtube text-lg"></i>
-</a>
-</div>
-</div>
-<div>
-<h3 className="font-medium text-lg mb-4">Products</h3>
-<ul className="space-y-2">
-<li><a href="#" className="text-zinc-400 hover:text-white transition-colors">ARythm-EMU 2050</a></li>
-<li><a href="#" className="text-zinc-400 hover:text-white transition-colors">Sound Packs</a></li>
-<li><a href="#" className="text-zinc-400 hover:text-white transition-colors">Expansion Modules</a></li>
-<li><a href="#" className="text-zinc-400 hover:text-white transition-colors">Preset Collections</a></li>
-<li><a href="#" className="text-zinc-400 hover:text-white transition-colors">Hardware Controllers</a></li>
-</ul>
-</div>
-<div>
-<h3 className="font-medium text-lg mb-4">Resources</h3>
-<ul className="space-y-2">
-<li><a href="#" className="text-zinc-400 hover:text-white transition-colors">Documentation</a></li>
-<li><a href="#" className="text-zinc-400 hover:text-white transition-colors">Tutorials</a></li>
-<li><a href="#" className="text-zinc-400 hover:text-white transition-colors">User Forum</a></li>
-<li><a href="#" className="text-zinc-400 hover:text-white transition-colors">Sound Design Blog</a></li>
-<li><a href="#" className="text-zinc-400 hover:text-white transition-colors">Developer API</a></li>
-</ul>
-</div>
-<div>
-<h3 className="font-medium text-lg mb-4">Company</h3>
-<ul className="space-y-2">
-<li><a href="#" className="text-zinc-400 hover:text-white transition-colors">About Us</a></li>
-<li><a href="#" className="text-zinc-400 hover:text-white transition-colors">Careers</a></li>
-<li><a href="#" className="text-zinc-400 hover:text-white transition-colors">Contact</a></li>
-<li><a href="#" className="text-zinc-400 hover:text-white transition-colors">Press Kit</a></li>
-<li><a href="#" className="text-zinc-400 hover:text-white transition-colors">Privacy Policy</a></li>
-</ul>
-</div>
-</div>
-<Separator className="bg-zinc-800 mb-8" />
-<div className="flex flex-col md:flex-row justify-between items-center">
-<div className="text-zinc-500 mb-4 md:mb-0">
-© 2025 ARythm Audio Technologies. All rights reserved.
-</div>
-<div className="flex items-center space-x-4">
-<div className="flex items-center">
-<i className="fa-brands fa-cc-visa text-zinc-400 text-2xl mr-2"></i>
-<i className="fa-brands fa-cc-mastercard text-zinc-400 text-2xl mr-2"></i>
-<i className="fa-brands fa-cc-paypal text-zinc-400 text-2xl mr-2"></i>
-<i className="fa-brands fa-cc-apple-pay text-zinc-400 text-2xl"></i>
-</div>
-</div>
-</div>
-</div>
-</footer>
+
+<Footer />
 </div>
 );
 };
-export default App
+export default App;
