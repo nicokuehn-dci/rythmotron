@@ -1,0 +1,73 @@
+/* Tailwind directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Globale CSS Variablen für das Theme */
+:root {
+    --bg-base: #0f0f11; /* From your tailwind config */
+    --bg-panel: #151518;
+    --bg-surface: #1c1c1f;
+    --bg-surface-hover: #27272a;
+    --border-color: #27272a;
+    --border-color-light: #71717a; /* Zinc 500 */
+    --text-primary: #f4f4f5;
+    --text-secondary: #a1a1aa;
+    --text-placeholder: #71717a;
+    --accent: #7c3aed;      /* From your tailwind config */
+    --accent-hover: #8b5cf6;
+    --accent-active: #6d28d9;
+    --accent-glow: theme(colors.violet.500 / 70%);
+    --red-glow: theme(colors.red.500 / 70%);
+    --green-glow: theme(colors.green.500 / 70%);
+    --blue-glow: theme(colors.blue.500 / 70%);
+
+    /* Pad Glow Farben als Variablen */
+    --glow-orange-500: theme(colors.orange.500);
+    --glow-yellow-400: theme(colors.yellow.400);
+    --glow-lime-400: theme(colors.lime.400);
+    --glow-green-500: theme(colors.green.500);
+    --glow-teal-500: theme(colors.teal.500);
+    --glow-cyan-500: theme(colors.cyan.500);
+    --glow-sky-500: theme(colors.sky.500);
+    --glow-blue-500: theme(colors.blue.500);
+    --glow-indigo-400: theme(colors.indigo.400);
+    --glow-purple-500: theme(colors.purple.500);
+    --glow-fuchsia-500: theme(colors.fuchsia.500);
+    --glow-pink-500: theme(colors.pink.500);
+
+    /* Standard Font */
+    font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+   background-color: var(--bg-base);
+   color: var(--text-primary);
+   /* Verhindert Scrollbalken durch pures Layout */
+   overflow: hidden;
+}
+
+/* Helper für 16 Spalten Grid */
+.grid-cols-16 {
+    grid-template-columns: repeat(16, minmax(0, 1fr));
+}
+
+/* Animation for pad and button presses */
+.active-press {
+  transform: scale(0.97);
+  filter: brightness(1.2);
+}
+
+/* Glow effects for active elements */
+.glow-accent {
+  box-shadow: 0 0 12px theme('colors.rytm-accent');
+}
+
+/* Display screen styles */
+.screen-panel {
+  background-color: theme('colors.rytm-panel');
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.4);
+  border-radius: 4px;
+}
