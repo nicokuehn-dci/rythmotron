@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import 'swiper/css';
 import 'swiper/css/pagination';
-import Knob from 'web/src/lib/components/Knob.svelte'; // Import Knob component
+import Knob from '@/components/KnobWrapper';
 
 const App: React.FC = () => {
 const [activePreset, setActivePreset] = useState(0);
