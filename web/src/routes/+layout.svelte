@@ -2,4 +2,14 @@
   import '../app/app.css';
 </script>
 
-<slot />
+<div class="app-container">
+  <slot />
+</div>
+
+<style>
+  .app-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+</style>

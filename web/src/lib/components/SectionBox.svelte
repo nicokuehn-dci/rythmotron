@@ -10,3 +10,15 @@
   {/if}
   <slot />
 </div>
+
+<style>
+  .bg-rytm-surface {
+    background-color: var(--bg-surface);
+  }
+  .border-rytm-border {
+    border-color: var(--border-color);
+  }
+  .text-rytm-text-secondary {
+    color: var(--text-secondary);
+  }
+</style>

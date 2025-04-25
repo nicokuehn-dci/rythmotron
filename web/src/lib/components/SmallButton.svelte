@@ -2,7 +2,7 @@
   export let label: string;
   export let bgColor: string = 'bg-rytm-surface';
   export let textColor: string = 'text-rytm-text-primary';
-export let active: boolean = false;
+  export let active: boolean = false;
 </script>
 
 <button 

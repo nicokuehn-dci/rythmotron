@@ -1,6 +1,5 @@
 <script lang="ts">
-  // Import all components
-  import SectionBox from '$lib/components/SectionBox.svelte';
+  // Import all necessary components from your lib folder
   import Knob from '$lib/components/Knob.svelte';
   import Pad from '$lib/components/Pad.svelte';
   import TrigButton from '$lib/components/TrigButton.svelte';
@@ -11,570 +10,284 @@
   import NavButton from '$lib/components/NavButton.svelte';
   import ActionButton from '$lib/components/ActionButton.svelte';
   import SmallButton from '$lib/components/SmallButton.svelte';
-  import { getRecommendedAudioSettings } from '$lib/utils/system-info';
 
-  // Import sound engine
-  import soundEngine from '$lib/utils/sound-engine';
+  // --- Placeholder Data & Reactive State (TODO: Move to Stores) ---
+  const padsData = [ /* ... Pad Daten wie zuvor ... */ ];
+  const trigLabels = ["BD","SD","RS","CP","BT","LT","MT","HT","CH","OH","CY","CB","","","",""];
 
-  // --- State Management ---
-  import { writable, derived } from 'svelte/store';
-  import { onMount, onDestroy } from 'svelte';
-  
-  // --- Placeholder Data & State ---
-  const pads = [
-    { label: 'CH', nr: 9, color: 'text-indigo-400'}, { label: 'OH', nr: 10, color: 'text-purple-500'}, { label: 'CY', nr: 11, color: 'text-fuchsia-500'}, { label: 'CB', nr: 12, color: 'text-pink-500'},
-    { label: 'BT', nr: 5, color: 'text-teal-400'}, { label: 'LT', nr: 6, color: 'text-cyan-400'}, { label: 'MT', nr: 7, color: 'text-sky-500'}, { label: 'HT', nr: 8, color: 'text-blue-500'},
-    { label: 'BD', nr: 1, color: 'text-orange-500'}, { label: 'SD', nr: 2, color: 'text-yellow-400'}, { label: 'RS', nr: 3, color: 'text-lime-400'}, { label: 'CP', nr: 4, color: 'text-green-500'},
-  ];
-   
-  const menuButtons = [
-    {label: 'PLAY', secondaryLabel: 'Kit'}, {label: 'MUTE', secondaryLabel: 'Sound'}, {label: 'CHRO', secondaryLabel: 'Track'},
-    {label: 'SCNE', secondaryLabel: 'Pattern'}, {label: 'PERF', secondaryLabel: 'Song'}, {label: 'FX', secondaryLabel: 'Setup'}, {label: 'TAP', secondaryLabel: 'Tempo'}
-  ];
+  const menuButtonsTopRowData = [ /* ... wie zuvor ... */ ];
+  const menuButtonsBottomRowData = [ /* ... wie zuvor ... */ ];
+  const paramPageButtonsData = [ /* ... wie zuvor ... */ ];
+  const patternPlayModeButtonsData = [ /* ... wie zuvor ... */ ];
+  const trigMuteAccentButtonsData = [ /* ... wie zuvor ... */ ];
+  const copyPasteButtonsData = [ /* ... wie zuvor ... */ ];
+  const songChainButtonsData = [ /* ... wie zuvor ... */ ];
+  const bottomButtonsData = [ /* ... wie zuvor ... */ ];
 
-  const paramPageButtons = [
-    {label: 'TRIG', secondaryLabel: 'Quantize'}, {label: 'SRC', secondaryLabel: 'Delay'}, {label: 'SMPL', secondaryLabel: 'Reverb'},
-    {label: 'FLTR', secondaryLabel: 'Dist'}, {label: 'AMP', secondaryLabel: 'Comp'}, {label: 'LFO', secondaryLabel: 'LFO'}
-  ];
+  const navIconsData = { /* ... wie zuvor ... */ };
+  const transportIconsData = { /* ... wie zuvor ... */ };
 
-  const navIcons = {
-    up: `<path d="M12 19V5M5 12l7-7 7 7"/>`,
-    down: `<path d="M12 5v14M19 12l-7 7-7-7"/>`,
-    left: `<path d="M19 12H5M12 19l-7-7 7-7"/>`,
-    right: `<path d="M5 12h14M12 5l7 7-7 7"/>`
-  }
+  // Beispiel reaktive Zustände (Später durch Stores ersetzen!)
+  let selectedPadNr: number = 1;
+  let activeSteps: number[] = [0, 4, 8, 12];
+  let trigStates: boolean[] = Array(16).fill(false).map((_, i) => i % 4 === 0);
+  let currentParamPage: string = 'FLTR';
+  let isPlaying: boolean = true;
+  let masterVolume: number = 110;
+  let quickPerfAmount: number = 0;
+  let knobValues: number[] = Array(8).fill(0).map(() => Math.random() * 127 | 0);
 
-   const transportIcons = {
-    rec: `<circle cx="12" cy="12" r="10"></circle>`,
-    stop: `<rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>`,
-    play: `<polygon points="5 3 19 12 5 21 5 3"></polygon>`
-  }
+  // Später: Importiere und initialisiere deine Svelte Stores und Services (AudioEngine, MIDIService)
+  // import { audioService } from '$lib/services/AudioEngineService';
+  // import { transportStore } from '$lib/stores/transport';
+  // import { onMount } from 'svelte';
+  // onMount(() => {
+  //   audioService.initialize();
+  // });
 
-  // Tracks data
-  const tracks = [
-    { name: 'BD', color: 'text-orange-500', pattern: Array(16).fill(false).map((_, i) => i % 4 === 0) },
-    { name: 'SD', color: 'text-yellow-400', pattern: Array(16).fill(false).map((_, i) => i % 4 === 2) },
-    { name: 'RS', color: 'text-lime-400', pattern: Array(16).fill(false).map((_, i) => i % 8 === 3) },
-    { name: 'CP', color: 'text-green-500', pattern: Array(16).fill(false).map((_, i) => i % 8 === 7) },
-    { name: 'BT', color: 'text-teal-400', pattern: Array(16).fill(false) },
-    { name: 'LT', color: 'text-cyan-400', pattern: Array(16).fill(false) },
-    { name: 'MT', color: 'text-sky-500', pattern: Array(16).fill(false).map((_, i) => i % 16 === 10) },
-    { name: 'HT', color: 'text-blue-500', pattern: Array(16).fill(false) },
-    { name: 'CH', color: 'text-indigo-400', pattern: Array(16).fill(false).map((_, i) => i % 2 === 1) },
-    { name: 'OH', color: 'text-purple-500', pattern: Array(16).fill(false).map((_, i) => i % 4 === 0) },
-    { name: 'CY', color: 'text-fuchsia-500', pattern: Array(16).fill(false) },
-    { name: 'CB', color: 'text-pink-500', pattern: Array(16).fill(false) },
-  ];
-
-  // Preset patterns to cycle through
-  const presetPatterns = [
-    {name: 'Basic Beat', bpm: 120},
-    {name: 'Techno Groove', bpm: 130},
-    {name: 'Minimal House', bpm: 126},
-    {name: 'Hip-Hop', bpm: 95},
-    {name: 'Drum & Bass', bpm: 174},
-    {name: 'Breakbeat', bpm: 140},
-    {name: 'Synthwave', bpm: 110},
-    {name: 'Trap', bpm: 75}
-  ];
-
-  // State Stores
-  const isPlaying = writable(false);
-  const isRecording = writable(false);
-  const tempo = writable(120);
-  const swing = writable(50);
-  const selectedPattern = writable(0);
-  const masterVolume = writable(100);
-  const selectedPad = writable(1);
-  const currentParamPage = writable('FLTR');
-  const currentMenuPage = writable('PLAY');
-  const trigStates = writable(Array(16).fill(false).map((_, i) => i % 4 === 0));
-  const trackMutes = writable(Array(12).fill(false));
-  const trackSolos = writable(Array(12).fill(false));
-  const currentStep = writable(0);
-  
-  // Filter & Effects Parameters
-  const filterCutoff = writable(64);
-  const filterResonance = writable(32);
-  const attack = writable(0);
-  const decay = writable(64);
-  const sustain = writable(0);
-  const release = writable(20);
-  const delay = writable(25); 
-  const reverb = writable(15);
-  const lfoRate = writable(50);
-  const lfoDepth = writable(25);
-
-  // Display modes
-  const displayModes = ['default', 'pattern', 'track', 'kit', 'system-info', 'fx', 'params'] as const; 
-  let displayMode: typeof displayModes[number] = 'default';
-  
-  // Audio settings based on system specs
-  const audioSettings = getRecommendedAudioSettings();
-
-  // Active steps (current playhead position)
-  let activeSteps = [0, 4, 8, 12];
-
-  // Generate PLock indicators for some steps
-  let pLockedSteps = [2, 7, 10, 14];
-  
-  // Step sequencer interval reference
-  let stepInterval: ReturnType<typeof setInterval> | null = null;
-  
-  // Tone.js sequence object
-  let sequencer: any = null;
-  
-  // Calculate step duration in milliseconds based on current tempo
-  function calculateStepDuration(tempo: number): number {
-    // 60 seconds / tempo = duration of quarter note in seconds
-    // Multiply by 1000 to get milliseconds
-    // Divide by 4 to get sixteenth note (typical step sequencer resolution)
-    return 60000 / tempo / 4;
-  }
-  
-  // Initialize the audio system
-  onMount(async () => {
-    try {
-      // Initialize the sound engine on first user interaction
-      document.body.addEventListener('click', initAudio, { once: true });
-      document.body.addEventListener('keydown', initAudio, { once: true });
-      
-      // Display welcome message
-      displayMode = 'default';
-    } catch (err) {
-      console.error('Error initializing audio:', err);
-    }
-  });
-  
-  // Initialize audio on first interaction (to comply with browser autoplay policies)
-  async function initAudio() {
-    try {
-      await soundEngine.initialize();
-      
-      // Create and configure the sequencer
-      const trackPatterns = Object.fromEntries(
-        tracks.map(track => [track.name, track.pattern])
-      );
-      
-      sequencer = soundEngine.createStepSequencer(trackPatterns);
-      soundEngine.setTempo($tempo);
-      sequencer.start(0);
-      
-      // Set initial effects values
-      soundEngine.setParam('FLTR', 'CUTOFF', $filterCutoff);
-      soundEngine.setParam('FLTR', 'RESONANCE', $filterResonance);
-      soundEngine.setParam('REVERB', 'MIX', $reverb / 127);
-      soundEngine.setParam('DELAY', 'MIX', $delay / 127);
-      
-      console.log('Audio initialized successfully');
-      displayMode = 'system-info';
-    } catch (err) {
-      console.error('Failed to initialize audio:', err);
-    }
-  }
-  
-  // Toggle play/pause
-  function togglePlay() {
-    $isPlaying = !$isPlaying;
-
-    if ($isPlaying) {
-      // Start Tone.js transport
-      soundEngine.start();
-      
-      // Update UI step counter
-      if (stepInterval) clearInterval(stepInterval);
-      
-      stepInterval = setInterval(() => {
-        $currentStep = ($currentStep + 1) % 16;
-      }, calculateStepDuration($tempo));
-    } else {
-      // Stop the sequencer
-      soundEngine.stop();
-      
-      // Stop the UI interval
-      if (stepInterval) {
-        clearInterval(stepInterval);
-        stepInterval = null;
-      }
-    }
-  }
-  
-  // Update tempo
-  $: {
-    soundEngine.setTempo($tempo);
-  }
-  
-  // Update volume
-  $: {
-    soundEngine.setMasterVolume($masterVolume);
-  }
-  
-  // Update swing
-  $: {
-    soundEngine.setSwing($swing);
-  }
-  
-  // Update filter parameters when knobs change
-  $: {
-    if ($currentParamPage === 'FLTR') {
-      soundEngine.setParam('FLTR', 'CUTOFF', $filterCutoff);
-      soundEngine.setParam('FLTR', 'RESONANCE', $filterResonance);
-    }
-  }
-  
-  // Update envelope parameters
-  $: {
-    if ($currentParamPage === 'AMP') {
-      // Update ADSR parameters
-      // Note: in a real implementation, we'd apply these to the currently selected track
-    }
-  }
-  
-  // Update effects parameters
-  $: {
-    if ($currentParamPage === 'SRC') {
-      soundEngine.setParam('DELAY', 'MIX', $delay / 127);
-    } else if ($currentParamPage === 'SMPL') {
-      soundEngine.setParam('REVERB', 'MIX', $reverb / 127);
-    }
-  }
-  
-  function toggleRecord() {
-    $isRecording = !$isRecording;
-  }
-
-  // Handle pad press to trigger sound
-  function handlePadPress(padLabel: string, velocity: number = 1) {
-    soundEngine.playPad(padLabel, velocity);
-    $selectedPad = pads.find(p => p.label === padLabel)?.nr || 1;
-    
-    // Update display to show the selected sound
-    displayMode = 'track';
-  }
-  
-  // Toggle a step in the sequencer
-  function toggleStep(trackIndex: number, stepIndex: number) {
-    // Update pattern in our state
-    tracks[trackIndex].pattern[stepIndex] = !tracks[trackIndex].pattern[stepIndex];
-    
-    // Update the sequencer's pattern
-    const trackPatterns = Object.fromEntries(
-      tracks.map(track => [track.name, track.pattern])
-    );
-    
-    // If we had a more complex implementation, we would update the sequencer here
-    // For now, we'll console log the change
-    console.log(`Updated ${tracks[trackIndex].name} step ${stepIndex + 1} to ${tracks[trackIndex].pattern[stepIndex]}`);
-  }
-  
-  // Clean up interval on component unmount
-  onDestroy(() => {
-    if (stepInterval) clearInterval(stepInterval);
-    
-    // Stop any transport if playing
-    if ($isPlaying) {
-      soundEngine.stop();
-    }
-  });
 </script>
 
 <svelte:head>
-  <title>ARythm-EMU 2050 MKII Interface</title>
+  <title>ARythm-EMU 2050</title>
 </svelte:head>
 
-<div class="flex flex-col h-screen bg-rytm-base text-rytm-text-primary p-4 gap-4 overflow-hidden">
+<!-- ================================================================ -->
+<!-- === HIER KOMMT DAS GESAMTE GRID-LAYOUT FÜR DIE INTERFACE HIN === -->
+<!-- === Kopiere den Inhalt von <div class="interface-layout">...</div> -->
+<!-- === aus dem vorherigen Beispiel hierher.                      === -->
+<!-- ================================================================ -->
+<div class="interface-layout">
 
-  <!-- === TOP ROW === -->
-  <div class="flex-none grid grid-cols-[auto_1fr_auto] gap-4 items-center">
-    <!-- Top Left Area -->
-    <div class="flex items-center gap-4">
-       <Knob label="MASTER VOL" value={$masterVolume} min={0} max={127} />
-       <!-- Function buttons -->
-       <div class="flex flex-col gap-1">
-          <SmallButton label="FUNC" />
-          <SmallButton label="TRK" />
-       </div>
+  <!-- Area: Top Left (Master Vol, QPerf, Func/Trk) -->
+  <div class="area-top-left">
+    <Knob label="MASTER VOL" bind:value={masterVolume} min={0} max={127} />
+    <div class="qperf-stack">
+        <SmallButton label="QPER" />
+        <Knob label="" bind:value={quickPerfAmount} min={0} max={127} size="sm"/>
     </div>
-
-    <!-- Top Center: Mode/Menu Buttons -->
-    <div class="flex justify-center gap-1.5">
-      {#each menuButtons as btn}
-         <MenuButton 
-label={btn.label} 
-secondaryLabel={btn.secondaryLabel} 
-           active={$currentMenuPage === btn.label}
-           on:click={() => changeMenuPage(btn.label)}
-/>
-      {/each}
+    <div class="func-stack">
+        <SmallButton label="FUNC" bgColor="bg-zinc-600" textColor="text-white"/>
+        <SmallButton label="TRK" />
     </div>
+    <div class="save-stack">
+        <SmallButton label="Save Project" />
+        <SmallButton label="Save Kit" />
+    </div>
+     <div class="misc-stack">
+        <SmallButton label="RTRG" />
+        <SmallButton label="Metronome" />
+    </div>
+    <SmallButton label="Direct" />
+  </div>
 
-    <!-- Top Right Area -->
-    <div class="flex items-center gap-4">
-       <Knob label="QUICK PERF" value={$swing} min={0} max={127} />
-       <div class="flex gap-2">
-         <TransportButton 
-label="Record" 
-icon={transportIcons.rec} 
-bgColor="bg-red-600/80 hover:bg-red-600" 
-           active={$isRecording}
-           on:click={toggleRecord}
-/>
-         <TransportButton 
-label="Stop" 
-icon={transportIcons.stop} 
-           on:click={() => { $isPlaying = false; soundEngine.stop(); }}
-/>
-         <TransportButton 
-label="Play" 
-icon={transportIcons.play} 
-active={$isPlaying} 
-           on:click={togglePlay}
-/>
-       </div>
+  <!-- Area: Top Center/Right (Modes & Transport) -->
+  <div class="area-top-right">
+    <div class="mode-buttons-container">
+        <div class="button-group">
+          {#each menuButtonsTopRowData as btn}
+              <MenuButton label={btn.label} secondaryLabel={btn.secondaryLabel} />
+          {/each}
+        </div>
+        <div class="button-group">
+          {#each menuButtonsBottomRowData as btn}
+              <MenuButton label={btn.label} secondaryLabel={btn.secondaryLabel} />
+          {/each}
+        </div>
+    </div>
+    <div class="transport-controls">
+        <TransportButton label="Record" icon={transportIconsData.rec} bgColor="bg-red-600/80 hover:bg-red-600" />
+        <TransportButton label="Stop" icon={transportIconsData.stop} />
+        <TransportButton label="Play" icon={transportIconsData.play} bind:active={isPlaying} />
     </div>
   </div>
 
-  <!-- === MIDDLE ROW === -->
-  <div class="flex-grow grid grid-cols-[1fr_auto_1fr] gap-4 min-h-0">
+  <!-- Area: Pads -->
+  <div class="area-pads">
+    <div class="pad-grid">
+      {#each padsData as pad (pad.nr)}
+        <Pad
+          label={pad.label}
+          trackColorClass={pad.colorClass}
+          selected={pad.nr === selectedPadNr}
+          active={(pad.nr === 2 || pad.nr === 6)} <!-- Example -->
+          on:padclick={() => selectedPadNr = pad.nr}
+        />
+      {/each}
+    </div>
+  </div>
 
-    <!-- Left Side: Pads -->
-    <div class="flex flex-col gap-4">
-        <SectionBox title="Pads">
-          <div class="grid grid-cols-4 gap-2">
-            {#each pads as pad (pad.nr)}
-              <Pad
-                label={pad.label}
-                trackColor={pad.color}
-                selected={pad.nr === $selectedPad}
-                active={(pad.nr === $selectedPad && $isPlaying) || (tracks[pad.nr - 1]?.pattern[$currentStep])}
-                on:padclick={() => handlePadPress(pad.label)}
+  <!-- Area: Display & Controls -->
+  <div class="area-display-controls">
+    <div class="display-nav-group">
+        <DisplayArea title={`PARAMS: ${currentParamPage}`}>
+            <p class="text-xs text-rytm-text-secondary mt-4">Screen Content Area</p>
+            <p class="text-xs text-rytm-text-secondary mt-1">Pad {selectedPadNr} selected</p>
+        </DisplayArea>
+        <div class="nav-controls">
+            <div class="col-start-2"><NavButton icon={navIconsData.up} /></div>
+            <div><NavButton icon={navIconsData.left} /></div>
+            <div><NavButton label="NO" /></div>
+            <div><NavButton icon={navIconsData.right} /></div>
+            <div class="col-start-2"><NavButton label="YES" /></div>
+            <div class="col-start-2"><NavButton icon={navIconsData.down} /></div>
+        </div>
+    </div>
+    <div class="knobs-params-group">
+        <div class="knob-grid">
+            {#each {length: 8} as _, i}
+                <Knob label={`${String.fromCharCode(65 + i)}`} bind:value={knobValues[i]} />
+            {/each}
+        </div>
+        <div class="button-group param-pages">
+            {#each paramPageButtonsData as btn}
+                <ParamPageButton
+                    label={btn.label}
+                    secondaryLabel={btn.secondaryLabel}
+                    active={btn.id === currentParamPage}
+                    on:click={() => currentParamPage = btn.id}
+                />
+            {/each}
+        </div>
+    </div>
+  </div>
+
+  <!-- Area: Bottom Left Controls -->
+  <div class="area-bottom-left">
+       <div class="button-group">
+          {#each patternPlayModeButtonsData as btn}
+               <ActionButton label={btn.label} />
+          {/each}
+       </div>
+        <div class="button-group">
+          {#each trigMuteAccentButtonsData as btn}
+               <ActionButton label={btn.label} />
+          {/each}
+       </div>
+  </div>
+
+  <!-- Area: Sequencer & Bottom Right Controls Combined -->
+  <div class="area-sequencer-bottom-right">
+      <!-- Sequencer Buttons -->
+      <div class="area-sequencer">
+          <div class="sequencer-grid">
+            {#each { length: 16 } as _, i}
+              <TrigButton
+                bind:isOn={trigStates[i]}
+                isActiveStep={activeSteps.includes(i)}
+                hasPLock={i === 2 || i === 10} <!-- Example -->
+                label={trigLabels[i]}
               />
             {/each}
           </div>
-        </SectionBox>
-        <!-- Track Status & Functions -->
-        <SectionBox title="Track Controls">
-          <div class="flex flex-col gap-2">
-            <div class="grid grid-cols-2 gap-2">
-              <div class="text-xs flex items-center gap-1">
-                <span class="font-semibold">TRACK:</span> 
-                <span class="text-rytm-text-accent">{tracks[$selectedPad - 1]?.name || 'BD'}</span>
+      </div>
+       <!-- Right Side Bottom Buttons -->
+       <div class="area-bottom-right">
+           <div class="button-group">
+             {#each copyPasteButtonsData as btn}
+                 <ActionButton label={btn.label} />
+             {/each}
+           </div>
+           <div class="button-group">
+             {#each songChainButtonsData as btn}
+                 <ActionButton label={btn.label} />
+             {/each}
+             <ActionButton label="FX/MIDI" />
+           </div>
+           <div class="sequencer-page-controls">
+              <div class="led-indicators">
+                  <div class="led-page active"></div> <div class="led-page"></div> <div class="led-page"></div> <div class="led-page"></div>
               </div>
-              <div class="text-xs flex items-center gap-1">
-                <span class="font-semibold">BPM:</span> 
-                <span class="text-rytm-text-accent">{$tempo}</span>
-              </div>
-            </div>
-        <div class="flex items-center gap-2 flex-wrap">
-             <SmallButton label="Save Project" />
-             <SmallButton label="Save Kit" />
-             <SmallButton label="RTRG" active={false} />
-             <SmallButton label="Metronome" active={false} />
-            </div>
-        </div>
-</SectionBox>
-    </div>
-
-    <!-- Center: Display & Nav -->
-     <div class="flex flex-col items-center justify-center gap-2">
-        <DisplayArea 
-title={displayMode === 'system-info' ? 'SYSTEM STATUS' : "ANALOG RYTM MKII EMU"}
-          mode={displayMode}
->
-           <!-- Display content varies based on mode -->
-{#if displayMode === 'default'}
-           <div class="text-xs text-rytm-text-secondary mt-2 flex flex-col gap-1">
-               <h3 class="text-sm text-center text-rytm-text-accent">PATTERN {$selectedPattern + 1}: {presetPatterns[$selectedPattern].name}</h3>
-               <div class="flex justify-between">
-                 <span>BPM: {$tempo}</span>
-                 <span>SWING: {$swing}%</span>
-               </div>
-               <div class="flex justify-between">
-                 <span>KIT: ARythm Standard</span>
-                 <span>STEP: {$currentStep + 1}/16</span>
-               </div>
-               <div class="flex justify-between">
-                 <span>SCALE: Chromatic</span>
-                 <span>{$isPlaying ? 'PLAYING' : 'STOPPED'}</span>
-               </div>
-             </div>
-           {:else if displayMode === 'system-info'}
-             <div class="text-xs text-rytm-text-secondary mt-2 flex flex-col gap-1">
-               <div class="flex justify-between">
-                 <span>AUDIO BUFFER:</span>
-                 <span>{audioSettings.bufferSize} samples</span>
-               </div>
-               <div class="flex justify-between">
-                 <span>SAMPLE RATE:</span>
-                 <span>{audioSettings.sampleRate} Hz</span>
-               </div>
-               <div class="flex justify-between">
-                 <span>LATENCY:</span>
-                 <span>{audioSettings.latency} ms</span>
-               </div>
-               <div class="flex justify-between">
-                 <span>POLYPHONY:</span>
-                 <span>12 voices</span>
-               </div>
-               <div class="flex justify-between">
-                 <span>CPU LOAD:</span>
-                 <span class="text-green-400">24%</span>
-               </div>
-             </div>
-           {:else if displayMode === 'params'}
-             <div class="text-xs text-rytm-text-secondary mt-2 flex flex-col gap-1">
-               <h3 class="text-sm text-center text-rytm-text-accent">{$currentParamPage} PARAMETERS</h3>
-                {#if $currentParamPage === 'FLTR'}
-                  <div class="flex justify-between">
-                    <span>CUTOFF:</span>
-                    <span>{$filterCutoff}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span>RESONANCE:</span>
-                    <span>{$filterResonance}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span>TYPE:</span>
-                    <span>LP 24dB</span>
-                  </div>
-                {:else if $currentParamPage === 'AMP'}
-                  <div class="flex justify-between">
-                    <span>ATTACK:</span>
-                    <span>{$attack}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span>DECAY:</span>
-                    <span>{$decay}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span>SUSTAIN:</span>
-                    <span>{$sustain}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span>RELEASE:</span>
-                    <span>{$release}</span>
-                  </div>
-                {:else}
-                  <div class="flex justify-between">
-                    <span>LOADING PARAMETERS...</span>
-                  </div>
-                {/if}
-             </div>
-           {:else if displayMode === 'pattern'}
-             <div class="text-xs text-rytm-text-secondary mt-2 flex flex-col gap-1">
-               <h3 class="text-sm text-center text-rytm-text-accent">PATTERN BROWSER</h3>
-               {#each presetPatterns as pattern, i}
-                 <div class="flex justify-between {$selectedPattern === i ? 'text-rytm-text-accent' : ''}">
-                   <span>{i + 1}: {pattern.name}</span>
-                   <span>{pattern.bpm} BPM</span>
-                 </div>
-               {/each}
-             </div>
-{/if}
-        </DisplayArea>
-        <div class="grid grid-cols-3 gap-1.5 w-full max-w-[150px]">
-           <div class="col-start-2"><NavButton icon={navIcons.up} /></div>
-           <div><NavButton icon={navIcons.left} /></div>
-           <div>
-             <NavButton label="NO" on:click={toggleSystemInfo} />
-</div>
-           <div><NavButton icon={navIcons.right} /></div>
-           <div class="col-start-2"><NavButton label="YES" /></div>
-           <div class="col-start-2"><NavButton icon={navIcons.down} /></div>
-        </div>
-     </div>
-
-    <!-- Right Side: Knobs & Param Buttons -->
-    <div class="flex flex-col gap-4 items-center">
-       <SectionBox title="Parameters">
-         <div class="grid grid-cols-4 gap-x-2 gap-y-3">
-<!-- Different param knobs based on the current param page -->
-           {#if $currentParamPage === 'FLTR'}
-             <Knob label="CUTOFF" value={$filterCutoff} on:change={e => $filterCutoff = e.detail.value} />
-             <Knob label="RESONANCE" value={$filterResonance} on:change={e => $filterResonance = e.detail.value} />
-             <Knob label="ENV AMT" value={50} />
-             <Knob label="ENV ATT" value={0} />
-             <Knob label="ENV DEC" value={64} />
-             <Knob label="ENV REL" value={20} />
-             <Knob label="TYPE" value={0} />
-             <Knob label="DRIVE" value={0} />
-           {:else if $currentParamPage === 'AMP'}
-             <Knob label="ATTACK" value={$attack} on:change={e => $attack = e.detail.value} />
-             <Knob label="HOLD" value={0} />
-             <Knob label="DECAY" value={$decay} on:change={e => $decay = e.detail.value} />
-             <Knob label="OVERDRIVE" value={0} />
-             <Knob label="SUSTAIN" value={$sustain} on:change={e => $sustain = e.detail.value} />
-             <Knob label="RELEASE" value={$release} on:change={e => $release = e.detail.value} />
-             <Knob label="VOLUME" value={100} />
-             <Knob label="PAN" value={64} />
-           {:else if $currentParamPage === 'LFO'}
-             <Knob label="SPEED" value={$lfoRate} on:change={e => $lfoRate = e.detail.value} />
-             <Knob label="MULT" value={0} />
-             <Knob label="FADE" value={0} />
-             <Knob label="START" value={0} />
-             <Knob label="DEPTH" value={$lfoDepth} on:change={e => $lfoDepth = e.detail.value} />
-             <Knob label="DEST 1" value={0} />
-             <Knob label="DEST 2" value={0} />
-             <Knob label="WAVEFORM" value={0} />
-           {:else}
-           {#each {length: 8} as _, i}
-             <Knob label={`PARAM ${String.fromCharCode(65 + i)}`} value={Math.random() * 127 | 0} />
-           {/each}
-{/if}
-         </div>
-       </SectionBox>
-       <div class="flex gap-1.5">
-          {#each paramPageButtons as btn}
-             <ParamPageButton 
-label={btn.label} 
-secondaryLabel={btn.secondaryLabel} 
-active={btn.label === $currentParamPage}
-               on:click={() => changeParamPage(btn.label)}
-/>
-          {/each}
-       </div>
-       <!-- Action Buttons -->
-        <div class="grid grid-cols-3 gap-1.5 mt-auto">
-            <ActionButton label="Copy" />
-            <ActionButton label="Clear" />
-            <ActionButton label="Paste" />
-            <ActionButton label="FX/MIDI" />
-            <ActionButton label="New Chain" />
-            <ActionButton label="Edit Song" />
-        </div>
-    </div>
-
-  </div>
-
-  <!-- === BOTTOM ROW: SEQUENCER === -->
-  <div class="flex-none">
-      <SectionBox>
-        <div class="flex items-center gap-1 md:gap-1.5 overflow-x-auto">
-            <div class="grid grid-cols-16 gap-1 flex-none">
-              {#each { length: 16 } as _, i}
-                <TrigButton
-                  step={i + 1}
-                  isOn={$trigStates[i]}
-                  isActiveStep={$currentStep === i}
-                  hasPLock={pLockedSteps.includes(i)}
-                  on:click={() => toggleStep($selectedPad - 1, i)}
-                />
+              {#each bottomButtonsData as btn}
+                  <MenuButton label={btn.label} secondaryLabel={btn.secondaryLabel} />
               {/each}
-            </div>
-             <!-- Page/Fill Buttons -->
-             <div class="flex flex-col gap-1 ml-auto pl-2">
-                <SmallButton label="PAGE" />
-                <SmallButton label="FILL" />
-             </div>
-        </div>
-     </SectionBox>
+           </div>
+       </div>
   </div>
 
 </div>
 
-<!-- Basic styling -->
+<!-- Stelle sicher, dass der Style-Block aus dem vorherigen Beispiel auch hier vorhanden ist -->
 <style>
-    :global(.grid-cols-16) {
-     grid-template-columns: repeat(16, minmax(0, 1fr));
+/* Kopiere den gesamten <style>-Block aus dem vorherigen Svelte-Beispiel hierher */
+.interface-layout {
+  display: grid;
+  height: 100vh; /* Nimmt die volle Höhe ein */
+  max-height: 100vh; /* Verhindert übermäßiges Wachstum */
+  padding: clamp(0.5rem, 1.5vmin, 1rem); /* Responsives Padding */
+  gap: clamp(0.5rem, 1.5vmin, 1rem) clamp(0.75rem, 2.5vmin, 1.5rem); /* Responsive Gaps */
+  grid-template-columns: minmax(auto, 40%) 1fr; /* Linke Spalte flexibel, aber max 40%, rechte füllt */
+  grid-template-rows: auto 1fr auto; /* Top, Middle (stretch), Bottom */
+  grid-template-areas:
+    "top-left         top-right"
+    "pads             display-controls"
+    "bottom-left      sequencer-bottom-right";
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: sans-serif;
+  overflow: hidden; /* Wichtig: Verhindert Scrollen der Hauptseite */
+}
+
+/* --- Area Styling & Alignment --- */
+.area-top-left { grid-area: top-left; display: flex; align-items: flex-end; gap: clamp(0.5rem, 2vmin, 1rem); padding-bottom: 0.25rem; }
+.area-top-right { grid-area: top-right; display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; padding-bottom: 0.25rem; }
+.area-pads { grid-area: pads; display: flex; justify-content: center; align-items: center; min-height: 0; padding: clamp(0.5rem, 2vmin, 1rem); }
+.area-display-controls { grid-area: display-controls; display: flex; flex-direction: column; gap: clamp(0.75rem, 2vmin, 1.5rem); min-height: 0; padding-top: clamp(0.5rem, 2vmin, 1rem); }
+.area-bottom-left { grid-area: bottom-left; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; gap: 0.5rem; padding-bottom: 0.25rem; }
+.area-sequencer-bottom-right { grid-area: sequencer-bottom-right; display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: flex-end; padding-top: 0.5rem; }
+.area-sequencer { grid-column: 1 / 2; overflow-x: auto; /* Falls Sequencer breiter als Platz */ }
+.area-bottom-right { grid-column: 2 / 3; display: flex; flex-direction: column; align-items: flex-end; justify-content: flex-end; gap: 0.5rem; padding-bottom: 0.25rem;}
+
+.qperf-stack, .func-stack, .save-stack, .misc-stack { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
+.mode-buttons-container { display: flex; flex-direction: column; align-items: flex-start; gap: 0.375rem; }
+.transport-controls { display: flex; gap: 0.5rem; }
+.pad-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(0.5rem, 2vmin, 0.75rem); width: 100%; max-width: 360px; /* Angepasste max. Breite */ }
+.display-nav-group { display: flex; align-items: center; justify-content: center; gap: clamp(1rem, 4vmin, 2rem); margin-bottom: auto; /* Drückt nach oben */ }
+.nav-controls { display: grid; grid-template-columns: repeat(3, auto); grid-template-rows: repeat(4, auto); gap: 0.375rem; justify-items: center; }
+.knobs-params-group { display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-top: auto; /* Drückt nach unten */ }
+.knob-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem 0.5rem; }
+.param-pages { display: flex; gap: 0.375rem; flex-wrap: wrap; justify-content: center; }
+.sequencer-grid { display: grid; grid-template-columns: repeat(16, minmax(var(--trig-min-width, 30px), 1fr)); gap: 0.25rem; padding-bottom: 0.25rem; /* Platz für Labels */ }
+.sequencer-page-controls { display: flex; align-items: center; gap: 0.5rem; }
+.led-indicators { display: flex; gap: 3px; align-items: center; }
+.led-page { width: 6px; height: 6px; border-radius: 50%; background-color: var(--border-color); transition: background-color 0.2s; }
+.led-page.active { background-color: var(--accent); }
+
+:root { --trig-min-width: 28px; } /* Minimale Breite für Trig Buttons */
+
+:global(.knob-container label) { font-size: 0.6rem; }
+:global(.knob-container output) { font-size: 0.55rem; }
+:global(.pad) { font-size: 0.6rem; }
+:global(.trig-button .trig-label) { font-size: 0.45rem; }
+:global(.menu-button .lbl-main) { font-size: 0.55rem;}
+:global(.menu-button .lbl-sub) { font-size: 0.45rem;}
+:global(.param-page-button .lbl-main) { font-size: 0.5rem;}
+:global(.param-page-button .lbl-sub) { font-size: 0.4rem;}
+:global(.nav-button) { width: 2rem; height: 1.75rem; font-size: 0.65rem;}
+:global(.nav-button svg) { width: 12px; height: 12px; }
+:global(.transport-button) { width: 2.25rem; height: 2.25rem;}
+:global(.transport-button svg) { width: 16px; height: 16px;}
+:global(.action-button) { height: 2rem; font-size: 0.65rem;}
+:global(.small-button) { height: 1.5rem; font-size: 0.55rem;}
+
+@media (max-width: 1024px) {
+  .interface-layout {
+    grid-template-columns: 1fr; /* Single column on smaller screens */
+    grid-template-rows: auto auto 1fr auto auto; /* Adjust rows */
+    grid-template-areas:
+      "top-left"
+      "top-right"
+      "display-controls" /* Display/knobs might come before pads */
+      "pads"
+      "sequencer-bottom-right"; /* Combined bottom area */
+    height: auto; /* Allow content height */
+    overflow-y: auto; /* Allow scrolling if needed */
   }
+  .area-bottom-left { display: none; } /* Hide less critical buttons maybe */
+  .area-sequencer-bottom-right { grid-template-columns: 1fr; gap: 0.5rem; } /* Stack sequencer and buttons */
+  .area-bottom-right { align-items: center; }
+  .pad-grid { max-width: none; }
+  .knob-grid { grid-template-columns: repeat(4, 1fr); } /* Ensure knobs stay in 4 columns */
+  .display-nav-group { flex-direction: column; gap: 0.5rem; }
+}
+
 </style>
