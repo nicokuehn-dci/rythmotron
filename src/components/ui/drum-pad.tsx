@@ -12,6 +12,12 @@ interface DrumPadProps {
   onClick?: () => void;
   className?: string;
   velocity?: number;
+  soundFile?: string;  // Neue Prop für Sound-Datei
+  decay?: number;      // Neue Prop für Decay-Wert
+  tone?: number;       // Neue Prop für Tone/Filter-Wert
+  pitch?: number;      // Neue Prop für Pitch/Tuning
+  selected?: boolean;  // Neue Prop für ausgewählten Zustand
+  onSelect?: () => void; // Neue Prop für Auswahlrückmeldung
 }
 
 const DrumPadBase: React.FC<DrumPadProps> = ({
@@ -23,7 +29,13 @@ const DrumPadBase: React.FC<DrumPadProps> = ({
   icon = 'fa-drum',
   onClick,
   className = '',
-  velocity = 100
+  velocity = 100,
+  soundFile = '',
+  decay = 50,
+  tone = 50,
+  pitch = 0,
+  selected = false,
+  onSelect
 }) => {
   const [isActive, setIsActive] = useState(false);
   const [animationIntensity, setAnimationIntensity] = useState(0);
@@ -37,9 +49,16 @@ const DrumPadBase: React.FC<DrumPadProps> = ({
   };
   
   // Function to handle click with visual feedback
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
     setIsActive(true);
     setAnimationIntensity(1);
+    
+    // Wenn mit rechter Maustaste geklickt, wählen wir das Pad aus, anstatt es zu spielen
+    if (e.button === 2 && onSelect) {
+      e.preventDefault();
+      onSelect();
+      return;
+    }
     
     // Trigger the callback
     if (onClick) onClick();
@@ -61,11 +80,18 @@ const DrumPadBase: React.FC<DrumPadProps> = ({
     
     requestAnimationFrame(decay);
   };
+
+  // Kontextmenü verhindern, um eigene Rechtsklick-Funktion zu ermöglichen
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (onSelect) onSelect();
+  };
   
   return (
     <div className={`flex flex-col items-center ${className}`}>
       <button
         onClick={handleClick}
+        onContextMenu={handleContextMenu}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         className={`
@@ -73,16 +99,19 @@ const DrumPadBase: React.FC<DrumPadProps> = ({
           flex flex-col items-center justify-center
           transition-all duration-100
           ${isActive ? 'transform scale-95' : isHovered ? 'transform scale-[1.02]' : ''}
+          ${selected ? 'ring-2 ring-offset-1' : ''}
         `}
         style={{
           background: isActive 
             ? `linear-gradient(145deg, rgba(20, 20, 20, 0.95), rgba(12, 12, 12, 0.9))`
             : `linear-gradient(145deg, rgba(40, 40, 40, 0.9), rgba(25, 25, 25, 0.9))`,
-          border: `1px solid ${isActive ? color : isHovered ? 'rgba(80, 80, 80, 0.7)' : 'rgba(60, 60, 60, 0.5)'}`,
+          border: `1px solid ${isActive ? color : selected ? color : isHovered ? 'rgba(80, 80, 80, 0.7)' : 'rgba(60, 60, 60, 0.5)'}`,
           boxShadow: isActive
             ? `inset 3px 3px 10px rgba(0, 0, 0, 0.7), 
                inset -1px -1px 4px rgba(80, 80, 80, 0.2),
                0 0 12px ${color}60`
+            : selected
+            ? `0 0 0 2px ${color}, 4px 4px 10px rgba(0, 0, 0, 0.6)`
             : isHovered
             ? `4px 4px 10px rgba(0, 0, 0, 0.6), 
                -2px -2px 6px rgba(80, 80, 80, 0.15),
@@ -90,15 +119,16 @@ const DrumPadBase: React.FC<DrumPadProps> = ({
                inset 1px 1px 1px rgba(50, 50, 50, 0.2)`
             : `3px 3px 8px rgba(0, 0, 0, 0.5), 
                -1px -1px 4px rgba(80, 80, 80, 0.1),
-               inset 1px 1px 1px rgba(50, 50, 50, 0.1)`
+               inset 1px 1px 1px rgba(50, 50, 50, 0.1)`,
+          ringColor: color
         }}
       >
         {/* LED indicator with enhanced 3D look */}
         <div className="absolute top-1.5 right-1.5" style={{
-          filter: isActive ? 'drop-shadow(0 0 3px ${color})' : 'none'
+          filter: isActive ? `drop-shadow(0 0 3px ${color})` : 'none'
         }}>
           <LED 
-            active={isActive} 
+            active={isActive || selected} 
             color={color}
             size="sm"
           />
@@ -108,8 +138,8 @@ const DrumPadBase: React.FC<DrumPadProps> = ({
         <div 
           className="text-xl mb-1"
           style={{ 
-            color: isActive ? color : isHovered ? '#aaa' : '#888',
-            textShadow: isActive ? `0 0 8px ${color}` : isHovered ? '0 0 2px rgba(255,255,255,0.2)' : 'none',
+            color: isActive ? color : selected ? color : isHovered ? '#aaa' : '#888',
+            textShadow: isActive ? `0 0 8px ${color}` : selected ? `0 0 5px ${color}60` : isHovered ? '0 0 2px rgba(255,255,255,0.2)' : 'none',
             transition: 'all 0.1s ease',
             transform: isActive ? 'translateY(1px)' : 'none'
           }}
@@ -119,8 +149,8 @@ const DrumPadBase: React.FC<DrumPadProps> = ({
         
         {/* Sound name */}
         <div className="text-xs font-medium" style={{ 
-          color: isActive ? color : isHovered ? '#bbb' : '#aaa',
-          textShadow: isActive ? `0 0 5px ${color}80` : isHovered ? '0 0 2px rgba(255,255,255,0.1)' : 'none',
+          color: isActive ? color : selected ? color : isHovered ? '#bbb' : '#aaa',
+          textShadow: isActive ? `0 0 5px ${color}80` : selected ? `0 0 3px ${color}40` : isHovered ? '0 0 2px rgba(255,255,255,0.1)' : 'none',
           transform: isActive ? 'translateY(1px)' : 'none'
         }}>
           {name}
@@ -187,9 +217,9 @@ const DrumPadBase: React.FC<DrumPadProps> = ({
         <div 
           className="absolute -inset-1 rounded-xl pointer-events-none transition-opacity duration-200"
           style={{
-            boxShadow: `0 0 15px ${color}${isActive ? 'aa' : '20'}`,
+            boxShadow: `0 0 15px ${color}${isActive ? 'aa' : selected ? '70' : '20'}`,
             filter: 'blur(2px)',
-            opacity: isActive ? 0.7 : isHovered ? 0.2 : 0
+            opacity: isActive ? 0.7 : selected ? 0.4 : isHovered ? 0.2 : 0
           }}
         />
         
@@ -202,6 +232,13 @@ const DrumPadBase: React.FC<DrumPadProps> = ({
               opacity: 0.6
             }}
           />
+        )}
+
+        {/* Zeige Sound-Datei (wenn vorhanden) */}
+        {soundFile && (
+          <div className="absolute bottom-1 left-1 text-[8px] opacity-70 text-zinc-400">
+            {soundFile.split('/').pop()?.substring(0, 8)}
+          </div>
         )}
       </button>
       

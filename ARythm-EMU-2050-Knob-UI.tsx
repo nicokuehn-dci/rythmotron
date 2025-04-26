@@ -7,9 +7,11 @@ import { Button } from "./src/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./src/components/ui/tabs";
 import { Card, CardContent } from "./src/components/ui/card";
 import Switch from "./src/components/ui/switch";
-import ErrorBoundary from './src/components/ui/ErrorHandler';
+// Korrekter Import von ErrorBoundary
+import ErrorBoundary from './src/components/ui/ErrorBoundary';
 import 'swiper/css';
 import 'swiper/css/pagination';
+import styles from './channelstrip.module.css'; // Import CSS module for channel strip
 
 
 // Import all components with corrected paths
@@ -31,6 +33,334 @@ import TestimonialCard from './src/components/TestimonialCard';
 import HeroSection from './src/components/HeroSection';
 import CallToActionSection from './src/components/CallToActionSection';
 import SynthPadGrid from './src/components/SynthPadGrid';
+import MixerPanel from './src/components/MixerPanel'; // Importieren der MixerPanel-Komponente anstelle von DrumSynthPanel
+
+
+// --- Interface für den internen State des ChannelStrips ---
+interface ChannelState {
+  // Input
+  gain: number;
+  phaseInvert: boolean;
+  hpfFreq: number;
+  hpfActive: boolean;
+  lpfFreq: number;
+  lpfActive: boolean;
+  // Gate
+  gateThreshold: number;
+  gateRange: number;
+  gateAttack: number;
+  gateRelease: number;
+  gateActive: boolean;
+  // Compressor
+  compThreshold: number;
+  compRatio: number;
+  compAttack: number;
+  compRelease: number;
+  compMakeup: number;
+  compActive: boolean;
+  // EQ (Beispiel für ein Band)
+  eqLowFreq: number;
+  eqLowGain: number;
+  eqLowPeak: boolean;
+  // ... weitere EQ Bänder
+  eqActive: boolean;
+  // DeEsser
+  deEsserThreshold: number;
+  deEsserFreq: number;
+  deEsserActive: boolean;
+  // Output
+  pan: number;
+  volume: number;
+  mute: boolean;
+  solo: boolean;
+}
+
+// Props interface for the OmniChannelStrip component
+interface OmniChannelStripProps {
+  channelName: string;
+  channelColor?: string;
+  initialState?: Partial<ChannelState>;
+}
+
+// --- Die OmniChannelStrip Komponente ---
+const OmniChannelStrip: React.FC<OmniChannelStripProps> = ({
+  channelName,
+  channelColor = '#60a5fa', // Default-Farbe
+  initialState = {},
+}) => {
+  // Rudimentärer interner State für Demo-Zwecke
+  const [state, setState] = useState<ChannelState>({
+    gain: 50, phaseInvert: false, hpfFreq: 20, hpfActive: false, lpfFreq: 20000, lpfActive: false,
+    gateThreshold: -20, gateRange: 40, gateAttack: 1, gateRelease: 100, gateActive: false,
+    compThreshold: -15, compRatio: 4, compAttack: 5, compRelease: 150, compMakeup: 0, compActive: false,
+    eqLowFreq: 100, eqLowGain: 0, eqLowPeak: false, /*...*/ eqActive: false,
+    deEsserThreshold: -10, deEsserFreq: 6000, deEsserActive: false,
+    pan: 50, volume: 75, mute: false, solo: false,
+    ...initialState, // Überschreibe Defaults mit initialen Props
+  });
+
+  // Helper für State-Updates (vereinfacht)
+  const updateState = (param: keyof ChannelState, value: number | boolean) => {
+    setState(prevState => ({ ...prevState, [param]: value }));
+  };
+
+  return (
+    <div className={styles.channelStripOmni} style={{ '--channel-color': channelColor } as React.CSSProperties}>
+
+      {/* --- Header --- */}
+      <div className={styles.header}>
+        <span className={styles.channelName}>{channelName}</span>
+        {/* Hier könnte eine kleine Aktivitäts-LED hin */}
+        <LED active={!state.mute && !state.solo} color={channelColor} />
+      </div>
+
+      {/* --- Modul: Preamp / Input --- */}
+      <div className={styles.moduleSection}>
+        <div className={styles.moduleTitle}>Input</div>
+        <div className={styles.controlsGrid}>
+          <Knob 
+            label="Gain" 
+            value={state.gain} 
+            onChange={(v) => updateState('gain', v)}
+            min={0}
+            max={100}
+          />
+          <Button 
+            variant={state.phaseInvert ? "default" : "outline"} 
+            onClick={() => updateState('phaseInvert', !state.phaseInvert)}
+            className={styles.buttonPlaceholder}
+          >
+            Ø
+          </Button>
+          <Knob 
+            label="HPF" 
+            value={state.hpfFreq} 
+            onChange={(v) => updateState('hpfFreq', v)}
+            min={20}
+            max={500}
+          />
+          <Button 
+            variant={state.hpfActive ? "default" : "outline"} 
+            onClick={() => updateState('hpfActive', !state.hpfActive)}
+            className={styles.buttonPlaceholder}
+          >
+            HPF
+          </Button>
+          <Knob 
+            label="LPF" 
+            value={state.lpfFreq} 
+            onChange={(v) => updateState('lpfFreq', v)}
+            min={1000}
+            max={20000}
+          />
+          <Button 
+            variant={state.lpfActive ? "default" : "outline"} 
+            onClick={() => updateState('lpfActive', !state.lpfActive)}
+            className={styles.buttonPlaceholder}
+          >
+            LPF
+          </Button>
+        </div>
+      </div>
+
+      {/* --- Modul: Gate/Expander --- */}
+      <div className={styles.moduleSection}>
+        <div className={styles.moduleTitle}>Gate</div>
+        <div className={styles.controlsGrid}>
+          <Knob 
+            label="Threshold" 
+            value={state.gateThreshold} 
+            onChange={(v) => updateState('gateThreshold', v)}
+            min={-60}
+            max={0}
+          />
+          <Knob 
+            label="Range" 
+            value={state.gateRange} 
+            onChange={(v) => updateState('gateRange', v)}
+            min={0}
+            max={100}
+          />
+          <Knob 
+            label="Attack" 
+            value={state.gateAttack} 
+            onChange={(v) => updateState('gateAttack', v)}
+            min={0.1}
+            max={100}
+          />
+          <Knob 
+            label="Release" 
+            value={state.gateRelease} 
+            onChange={(v) => updateState('gateRelease', v)}
+            min={10}
+            max={1000}
+          />
+          <Button 
+            variant={!state.gateActive ? "default" : "outline"} 
+            onClick={() => updateState('gateActive', !state.gateActive)}
+            className={styles.buttonPlaceholder}
+          >
+            BYP
+          </Button>
+        </div>
+      </div>
+
+      {/* --- Modul: Compressor --- */}
+      <div className={styles.moduleSection}>
+        <div className={styles.moduleTitle}>Compressor</div>
+        <div className={styles.controlsGrid}>
+          <Knob 
+            label="Threshold" 
+            value={state.compThreshold} 
+            onChange={(v) => updateState('compThreshold', v)}
+            min={-60}
+            max={0}
+          />
+          <Knob 
+            label="Ratio" 
+            value={state.compRatio} 
+            onChange={(v) => updateState('compRatio', v)}
+            min={1}
+            max={20}
+          />
+          <Knob 
+            label="Attack" 
+            value={state.compAttack} 
+            onChange={(v) => updateState('compAttack', v)}
+            min={0.1}
+            max={100}
+          />
+          <Knob 
+            label="Release" 
+            value={state.compRelease} 
+            onChange={(v) => updateState('compRelease', v)}
+            min={10}
+            max={1000}
+          />
+          <Knob 
+            label="Makeup" 
+            value={state.compMakeup} 
+            onChange={(v) => updateState('compMakeup', v)}
+            min={0}
+            max={24}
+          />
+          <Button 
+            variant={!state.compActive ? "default" : "outline"} 
+            onClick={() => updateState('compActive', !state.compActive)}
+            className={styles.buttonPlaceholder}
+          >
+            BYP
+          </Button>
+        </div>
+      </div>
+
+      {/* --- Modul: Equalizer --- */}
+      <div className={styles.moduleSection}>
+        <div className={styles.moduleTitle}>Equalizer</div>
+        <div className={styles.controlsGrid}>
+          <Knob 
+            label="LF Freq" 
+            value={state.eqLowFreq} 
+            onChange={(v) => updateState('eqLowFreq', v)}
+            min={20}
+            max={500}
+          />
+          <Knob 
+            label="LF Gain" 
+            value={state.eqLowGain} 
+            onChange={(v) => updateState('eqLowGain', v)}
+            min={-18}
+            max={18}
+          />
+          <Button 
+            variant={state.eqLowPeak ? "default" : "outline"} 
+            onClick={() => updateState('eqLowPeak', !state.eqLowPeak)}
+            className={styles.buttonPlaceholder}
+          >
+            Peak
+          </Button>
+          <Button 
+            variant={!state.eqActive ? "default" : "outline"} 
+            onClick={() => updateState('eqActive', !state.eqActive)}
+            className={styles.buttonPlaceholder}
+          >
+            EQ BYP
+          </Button>
+        </div>
+      </div>
+
+      {/* --- Modul: DeEsser --- */}
+      <div className={styles.moduleSection}>
+        <div className={styles.moduleTitle}>DeEsser</div>
+        <div className={styles.controlsGrid}>
+          <Knob 
+            label="Threshold" 
+            value={state.deEsserThreshold} 
+            onChange={(v) => updateState('deEsserThreshold', v)}
+            min={-40}
+            max={0}
+          />
+          <Knob 
+            label="Frequency" 
+            value={state.deEsserFreq} 
+            onChange={(v) => updateState('deEsserFreq', v)}
+            min={2000}
+            max={16000}
+          />
+          <Button 
+            variant={!state.deEsserActive ? "default" : "outline"} 
+            onClick={() => updateState('deEsserActive', !state.deEsserActive)}
+            className={styles.buttonPlaceholder}
+          >
+            BYP
+          </Button>
+        </div>
+      </div>
+
+      {/* --- Modul: Output / Fader --- */}
+      <div className={`${styles.moduleSection} ${styles.outputSection}`}>
+        <div className={styles.faderMeterWrapper}>
+          <div className={styles.faderControls}>
+            <Knob 
+              label="Pan" 
+              value={state.pan} 
+              onChange={(v) => updateState('pan', v)}
+              min={0}
+              max={100}
+              size="small"
+            />
+            <Button 
+              variant={state.mute ? "destructive" : "outline"} 
+              onClick={() => updateState('mute', !state.mute)}
+              className={`${styles.buttonPlaceholder} ${state.mute ? styles.muteButton : ''}`}
+            >
+              M
+            </Button>
+            <Button 
+              variant={state.solo ? "default" : "outline"} 
+              onClick={() => updateState('solo', !state.solo)}
+              className={`${styles.buttonPlaceholder} ${state.solo ? styles.soloButton : ''}`}
+            >
+              S
+            </Button>
+          </div>
+          <Slider 
+            value={[state.volume]} 
+            onValueChange={(v) => updateState('volume', v[0])}
+            orientation="vertical"
+            min={0}
+            max={100}
+            step={1}
+            className={styles.faderPlaceholderWrapper}
+          />
+          <div className={styles.meterPlaceholder}>
+            <div className={styles.meterFill} style={{ height: `${state.volume}%` }}></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const AppBase: React.FC = () => {
 const [activePreset, setActivePreset] = useState(0);
@@ -57,21 +387,8 @@ const [sustain, setSustain] = useState(70);
 const [release, setRelease] = useState(45);
 const [activeSequence, setActiveSequence] = useState(Array(16).fill(false));
 const [activeTab, setActiveTab] = useState("synth");
-const [tempo, setTempo] = useState(120);
-const [swing, setSwing] = useState(50);
-const [patternLength, setPatternLength] = useState(16);
-const [mute, setMute] = useState(Array(8).fill(false));
-const [solo, setSolo] = useState(Array(8).fill(false));
-const [performance, setPerformance] = useState({
-x: 50,
-y: 50,
-pressure: 0,
-});
-const [lfo, setLfo] = useState({
-rate: 50,
-depth: 50,
-shape: 'sine',
-});
+const [tempo, setTempo] = useState(120); // Hinzugefügt: Fehlender State für tempo
+
 const tracks = [
 { name: 'BD', color: 'purple', icon: 'fa-drum', pattern: Array(16).fill(false) },
 { name: 'SD', color: 'blue', icon: 'fa-drum', pattern: Array(16).fill(false) },
@@ -297,261 +614,263 @@ return (
 
 <main className="container mx-auto px-4 py-12">
 <HeroSection />
+
 <section className="mb-16">
-<div className="text-center mb-12">
-<h2 className="text-3xl font-bold mb-4">Key Features</h2>
-<p className="text-zinc-400 max-w-2xl mx-auto">
-ARythm-EMU 2050 combines advanced digital synthesis with intuitive controls, giving you unprecedented creative freedom.
-</p>
-</div>
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-{features.map((feature, index) => (
-<FeatureCard
-key={index}
-title={feature.title}
-description={feature.description}
-icon={feature.icon}
-/>
-))}
-</div>
+  <div className="text-center mb-12">
+    <h2 className="text-3xl font-bold mb-4">Key Features</h2>
+    <p className="text-zinc-400 max-w-2xl mx-auto">
+      ARythm-EMU 2050 combines advanced digital synthesis with intuitive controls, giving you unprecedented creative freedom.
+    </p>
+  </div>
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    {features.map((feature, index) => (
+      <FeatureCard
+        key={index}
+        title={feature.title}
+        description={feature.description}
+        icon={feature.icon}
+      />
+    ))}
+  </div>
 </section>
 
 <section className="mb-16">
-<div className="bg-zinc-800/30 rounded-2xl p-8 border border-zinc-700/50">
-<div className="text-center mb-8">
-<h2 className="text-3xl font-bold mb-4">Interactive Demo</h2>
-<p className="text-zinc-400 max-w-2xl mx-auto">
-Get a feel for the ARythm-EMU 2050 interface with our interactive demo. Adjust parameters and see how they affect the sound.
-</p>
-</div>
+  <div className="bg-zinc-800/30 rounded-2xl p-8 border border-zinc-700/50">
+    <div className="text-center mb-8">
+      <h2 className="text-3xl font-bold mb-4">Interactive Demo</h2>
+      <p className="text-zinc-400 max-w-2xl mx-auto">
+        Get a feel for the ARythm-EMU 2050 interface with our interactive demo. Adjust parameters and see how they affect the sound.
+      </p>
+    </div>
 
-<Tabs defaultValue="synth" className="w-full" onValueChange={setActiveTab}>
-<TabsList className="grid grid-cols-3 mb-8">
-<TabsTrigger value="synth" className="!rounded-button whitespace-nowrap">Synthesizer</TabsTrigger>
-<TabsTrigger value="sequencer" className="!rounded-button whitespace-nowrap">Sequencer</TabsTrigger>
-<TabsTrigger value="effects" className="!rounded-button whitespace-nowrap">Effects</TabsTrigger>
-</TabsList>
+    <Tabs defaultValue="synth" className="w-full" onValueChange={setActiveTab}>
+      <TabsList className="grid grid-cols-4 mb-8">
+        <TabsTrigger value="synth" className="!rounded-button whitespace-nowrap">Synthesizer</TabsTrigger>
+        <TabsTrigger value="sequencer" className="!rounded-button whitespace-nowrap">Sequencer</TabsTrigger>
+        <TabsTrigger value="effects" className="!rounded-button whitespace-nowrap">Effects</TabsTrigger>
+        <TabsTrigger value="drumsynth" className="!rounded-button whitespace-nowrap">Mixer</TabsTrigger>
+      </TabsList>
 
-<TabsContent value="synth" className="mt-0">
-<div className="grid grid-cols-1 gap-8">
-<div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800">
-<TransportControls
-isPlaying={isPlaying}
-onPlayPause={handlePlayPause}
-showRecord={true}
-volume={volume}
-onVolumeChange={setVolume}
-className="mb-6"
-/>
+      <TabsContent value="synth" className="mt-0">
+        <div className="grid grid-cols-1 gap-8">
+          <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800">
+            <TransportControls
+              isPlaying={isPlaying}
+              onPlayPause={handlePlayPause}
+              showRecord={true}
+              volume={volume}
+              onVolumeChange={setVolume}
+              className="mb-6"
+            />
 
-<div className="grid grid-cols-1 gap-8">
-<SynthPadGrid 
-pads={padData} 
-onTogglePad={(id) => toggleSequenceStep(id)} 
-currentStep={0}
-/>
+            <div className="grid grid-cols-1 gap-8">
+              <SynthPadGrid 
+                pads={padData} 
+                onTogglePad={(id) => toggleSequenceStep(id)} 
+                currentStep={0}
+              />
 
-<div className="mt-8 bg-zinc-800/30 rounded-xl p-6 border border-zinc-700">
-<div className="flex justify-between items-center mb-6">
-<h3 className="text-lg font-medium">Step Sequencer</h3>
-<div className="flex items-center space-x-4">
-<div className="flex items-center space-x-2">
-<LED active={true} color="green" />
-<span className="text-sm text-zinc-400">Pattern A1</span>
-</div>
-<Button variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">
-<i className="fa-solid fa-copy mr-2"></i>
-Clone
-</Button>
-</div>
-</div>
+              <div className="mt-8 bg-zinc-800/30 rounded-xl p-6 border border-zinc-700">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-lg font-medium">Step Sequencer</h3>
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <LED active={true} color="green" />
+                      <span className="text-sm text-zinc-400">Pattern A1</span>
+                    </div>
+                    <Button variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">
+                      <i className="fa-solid fa-copy mr-2"></i>
+                      Clone
+                    </Button>
+                  </div>
+                </div>
 
-<StepSequencer
-steps={activeSequence}
-onToggleStep={toggleSequenceStep}
-currentStep={0}
-/>
-</div>
+                <StepSequencer
+                  steps={activeSequence}
+                  onToggleStep={toggleSequenceStep}
+                  currentStep={0}
+                />
+              </div>
 
-<div className="flex justify-between items-center">
-<div className="flex space-x-2 items-center">
-<LED active={true} color="green" />
-<span className="text-xs text-zinc-400">OSC 1</span>
-</div>
-<div className="flex space-x-4">
-<Button variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">Sine</Button>
-<Button variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">Saw</Button>
-<Button variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">Square</Button>
-</div>
-</div>
-</div>
+              <div className="flex justify-between items-center">
+                <div className="flex space-x-2 items-center">
+                  <LED active={true} color="green" />
+                  <span className="text-xs text-zinc-400">OSC 1</span>
+                </div>
+                <div className="flex space-x-4">
+                  <Button variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">Sine</Button>
+                  <Button variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">Saw</Button>
+                  <Button variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">Square</Button>
+                </div>
+              </div>
+            </div>
 
-<div>
-<div className="mb-4">
-<h3 className="text-sm text-zinc-400 mb-2">Spectrum</h3>
-<WaveformDisplay type="spectrum" height={128} />
-</div>
-<div className="flex justify-between items-center">
-<div className="flex space-x-2 items-center">
-<LED active={true} color="purple" />
-<span className="text-xs text-zinc-400">Analyzer</span>
-</div>
-<div className="flex space-x-2 items-center">
-<span className="text-xs text-zinc-400">Resolution</span>
-<select className="bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs rounded-md !rounded-button whitespace-nowrap">
-<option>1024</option>
-<option>2048</option>
-<option>4096</option>
-</select>
-</div>
-</div>
-</div>
-</div>
+            <div>
+              <div className="mb-4">
+                <h3 className="text-sm text-zinc-400 mb-2">Spectrum</h3>
+                <WaveformDisplay type="spectrum" height={128} />
+              </div>
+              <div className="flex justify-between items-center">
+                <div className="flex space-x-2 items-center">
+                  <LED active={true} color="purple" />
+                  <span className="text-xs text-zinc-400">Analyzer</span>
+                </div>
+                <div className="flex space-x-2 items-center">
+                  <span className="text-xs text-zinc-400">Resolution</span>
+                  <select className="bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs rounded-md !rounded-button whitespace-nowrap">
+                    <option>1024</option>
+                    <option>2048</option>
+                    <option>4096</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
 
-<div className="grid grid-cols-2 gap-8 mt-8">
-<div>
-<h3 className="text-sm text-zinc-400 mb-4">Track Parameters</h3>
-<div className="grid grid-cols-4 gap-4">
-<div>
-<Knob
-value={attack}
-onChange={setAttack}
-label="Attack"
-size="sm"
-color="#4ade80"
-/>
-</div>
-<div>
-<Knob
-value={decay}
-onChange={setDecay}
-label="Decay"
-size="sm"
-color="#4ade80"
-/>
-</div>
-<div>
-<Knob
-value={sustain}
-onChange={setSustain}
-label="Sustain"
-size="sm"
-color="#4ade80"
-/>
-</div>
-<div>
-<Knob
-value={release}
-onChange={setRelease}
-label="Release"
-size="sm"
-color="#4ade80"
-/>
-</div>
-</div>
-</div>
-</div>
-<div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800">
-<h3 className="text-lg font-medium mb-4">Filter</h3>
-<div className="space-y-6">
-<div>
-<Knob
-value={filter}
-onChange={setFilter}
-label="Cutoff"
-color="#a855f7"
-/>
-</div>
-<div>
-<Knob
-value={resonance}
-onChange={setResonance}
-label="Resonance"
-color="#a855f7"
-/>
-</div>
-<div className="pt-4">
-<h4 className="text-sm text-zinc-400 mb-2">Filter Type</h4>
-<div className="grid grid-cols-2 gap-2">
-<Button variant="outline" size="sm" className="border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white !rounded-button whitespace-nowrap">Low Pass</Button>
-<Button variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">High Pass</Button>
-<Button variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">Band Pass</Button>
-<Button variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">Notch</Button>
-</div>
-</div>
-</div>
-</div>
-</div>
-</TabsContent>
+          <div className="grid grid-cols-2 gap-8 mt-8">
+            <div>
+              <h3 className="text-sm text-zinc-400 mb-4">Track Parameters</h3>
+              <div className="grid grid-cols-4 gap-4">
+                <div>
+                  <Knob
+                    value={attack}
+                    onChange={setAttack}
+                    label="Attack"
+                    size="sm"
+                    color="#4ade80"
+                  />
+                </div>
+                <div>
+                  <Knob
+                    value={decay}
+                    onChange={setDecay}
+                    label="Decay"
+                    size="sm"
+                    color="#4ade80"
+                  />
+                </div>
+                <div>
+                  <Knob
+                    value={sustain}
+                    onChange={setSustain}
+                    label="Sustain"
+                    size="sm"
+                    color="#4ade80"
+                  />
+                </div>
+                <div>
+                  <Knob
+                    value={release}
+                    onChange={setRelease}
+                    label="Release"
+                    size="sm"
+                    color="#4ade80"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800">
+            <h3 className="text-lg font-medium mb-4">Filter</h3>
+            <div className="space-y-6">
+              <div>
+                <Knob
+                  value={filter}
+                  onChange={setFilter}
+                  label="Cutoff"
+                  color="#a855f7"
+                />
+              </div>
+              <div>
+                <Knob
+                  value={resonance}
+                  onChange={setResonance}
+                  label="Resonance"
+                  color="#a855f7"
+                />
+              </div>
+              <div className="pt-4">
+                <h4 className="text-sm text-zinc-400 mb-2">Filter Type</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="outline" size="sm" className="border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white !rounded-button whitespace-nowrap">Low Pass</Button>
+                  <Button variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">High Pass</Button>
+                  <Button variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">Band Pass</Button>
+                  <Button variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">Notch</Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </TabsContent>
 
-<TabsContent value="sequencer" className="mt-0">
-<div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800">
-<div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-{/* Track List and Controls */}
-<div className="lg:col-span-3 bg-zinc-800/50 rounded-lg p-4">
-<h3 className="text-sm font-medium mb-4">Tracks</h3>
-<TrackList
-tracks={tracks}
-selectedTrack={selectedTrack}
-mutes={trackMutes}
-solos={trackSolos}
-onSelectTrack={setSelectedTrack}
-onToggleMute={(index) => {
-const newMutes = [...trackMutes];
-newMutes[index] = !newMutes[index];
-setTrackMutes(newMutes);
-}}
-onToggleSolo={(index) => {
-const newSolos = [...trackSolos];
-newSolos[index] = !newSolos[index];
-setTrackSolos(newSolos);
-}}
-/>
-</div>
-{/* Step Sequencer */}
-<div className="lg:col-span-9 bg-zinc-800/50 rounded-lg p-4">
-<TransportControls
-isPlaying={isPlaying}
-onPlayPause={handlePlayPause}
-tempo={tempo}
-onTempoChange={setTempo}
-className="mb-4"
-/>
-{/* Step Grid */}
-<div className="grid grid-cols-16 gap-1 mb-4">
-{Array.from({ length: 16 }).map((_, stepIndex) => (
-<div key={stepIndex} className="flex flex-col space-y-1">
-<div className="text-xs text-center text-zinc-500">{stepIndex + 1}</div>
-{tracks.map((track, trackIndex) => (
-<div
-key={`${trackIndex}-${stepIndex}`}
-className={`h-8 ${
-track.pattern[stepIndex]
-? `bg-${track.color}-900/30 border-${track.color}-500`
-: 'bg-zinc-800 border-zinc-700'
-} border rounded cursor-pointer hover:bg-zinc-700 transition-colors`}
-onClick={() => {
-const newTracks = [...tracks];
-newTracks[trackIndex].pattern[stepIndex] = !newTracks[trackIndex].pattern[stepIndex];
-// Update tracks state
-}}
->
-<div className="h-full flex flex-col justify-between p-1">
-<div className="flex justify-between">
-<LED active={track.pattern[stepIndex]} color={track.color} size="xs" />
-<LED active={stepIndex === 0} color="green" size="xs" />
-</div>
-</div>
-</div>
-))}
-</div>
-))}
-</div>
-{/* Step Parameters */}
-<div className="grid grid-cols-3 gap-4">
-<div>
-<h4 className="text-sm mb-2">Velocity</h4>
-<Slider
+      <TabsContent value="sequencer" className="mt-0">
+        <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Track List and Controls */}
+            <div className="lg:col-span-3 bg-zinc-800/50 rounded-lg p-4">
+              <h3 className="text-sm font-medium mb-4">Tracks</h3>
+              <TrackList
+                tracks={tracks}
+                selectedTrack={selectedTrack}
+                mutes={trackMutes}
+                solos={trackSolos}
+                onSelectTrack={setSelectedTrack}
+                onToggleMute={(index) => {
+                  const newMutes = [...trackMutes];
+                  newMutes[index] = !newMutes[index];
+                  setTrackMutes(newMutes);
+                }}
+                onToggleSolo={(index) => {
+                  const newSolos = [...trackSolos];
+                  newSolos[index] = !newSolos[index];
+                  setTrackSolos(newSolos);
+                }}
+              />
+            </div>
+            {/* Step Sequencer */}
+            <div className="lg:col-span-9 bg-zinc-800/50 rounded-lg p-4">
+              <TransportControls
+                isPlaying={isPlaying}
+                onPlayPause={handlePlayPause}
+                tempo={tempo}
+                onTempoChange={setTempo}
+                className="mb-4"
+              />
+              {/* Step Grid */}
+              <div className="grid grid-cols-16 gap-1 mb-4">
+                {Array.from({ length: 16 }).map((_, stepIndex) => (
+                  <div key={stepIndex} className="flex flex-col space-y-1">
+                    <div className="text-xs text-center text-zinc-500">{stepIndex + 1}</div>
+                    {tracks.map((track, trackIndex) => (
+                      <div
+                        key={`${trackIndex}-${stepIndex}`}
+                        className={`h-8 ${
+                          track.pattern[stepIndex]
+                            ? `bg-${track.color}-900/30 border-${track.color}-500`
+                            : 'bg-zinc-800 border-zinc-700'
+                        } border rounded cursor-pointer hover:bg-zinc-700 transition-colors`}
+                        onClick={() => {
+                          const newTracks = [...tracks];
+                          newTracks[trackIndex].pattern[stepIndex] = !newTracks[trackIndex].pattern[stepIndex];
+                          // Update tracks state
+                        }}
+                      >
+                        <div className="h-full flex flex-col justify-between p-1">
+                          <div className="flex justify-between">
+                            <LED active={track.pattern[stepIndex]} color={track.color} size="xs" />
+                            <LED active={stepIndex === 0} color="green" size="xs" />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+              {/* Step Parameters */}
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <h4 className="text-sm mb-2">Velocity</h4>
+                  <Slider
   value={stepParams[0].velocity}
   onChange={(value) => {
     const newParams = [...stepParams];
@@ -561,10 +880,10 @@ newTracks[trackIndex].pattern[stepIndex] = !newTracks[trackIndex].pattern[stepIn
   max={100}
   step={1}
 />
-</div>
-<div>
-<h4 className="text-sm mb-2">Probability</h4>
-<Slider
+                </div>
+                <div>
+                  <h4 className="text-sm mb-2">Probability</h4>
+                  <Slider
   value={stepParams[0].probability}
   onChange={(value) => {
     const newParams = [...stepParams];
@@ -574,10 +893,10 @@ newTracks[trackIndex].pattern[stepIndex] = !newTracks[trackIndex].pattern[stepIn
   max={100}
   step={1}
 />
-</div>
-<div>
-<h4 className="text-sm mb-2">Length</h4>
-<Slider
+                </div>
+                <div>
+                  <h4 className="text-sm mb-2">Length</h4>
+                  <Slider
   value={stepParams[0].length}
   onChange={(value) => {
     const newParams = [...stepParams];
@@ -587,274 +906,239 @@ newTracks[trackIndex].pattern[stepIndex] = !newTracks[trackIndex].pattern[stepIn
   max={100}
   step={1}
 />
-</div>
-</div>
-</div>
-</div>
-{/* Performance Controls */}
-<div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-{/* XY Pad */}
-<div className="lg:col-span-4 bg-zinc-800/50 rounded-lg p-4">
-<h3 className="text-sm font-medium mb-4">XY Performance Pad</h3>
-<XYPad
-value={xyPad}
-onChange={setXyPad}
-/>
-</div>
-{/* LFO Controls */}
-<div className="lg:col-span-4 bg-zinc-800/50 rounded-lg p-4">
-<h3 className="text-sm font-medium mb-4">LFO</h3>
-<div className="space-y-4">
-<div>
-<label className="text-sm mb-2 block">Rate</label>
-<Slider
-value={lfoRate}
-onValueChange={(values) => setLfoRate(values[0])}
-max={100}
-step={1}
-/>
-</div>
-<div>
-<label className="text-sm mb-2 block">Depth</label>
-<Slider
-value={lfoDepth}
-onValueChange={(values) => setLfoDepth(values[0])}
-max={100}
-step={1}
-/>
-</div>
-<div>
-<label className="text-sm mb-2 block">Shape</label>
-<div className="grid grid-cols-4 gap-2">
-{['sine', 'triangle', 'square', 'saw'].map((shape) => (
-<Button
-key={shape}
-variant="outline"
-size="sm"
-className={`border-zinc-700 ${
-lfoShape === shape ? 'bg-purple-900/30 border-purple-500' : ''
-} !rounded-button whitespace-nowrap`}
-onClick={() => setLfoShape(shape)}
->
-<i className={`fa-solid fa-waveform-${shape}`}></i>
-</Button>
-))}
-</div>
-</div>
-</div>
-</div>
-{/* Drum Pads */}
-<div className="lg:col-span-4 bg-zinc-800/50 rounded-lg p-4">
-<h3 className="text-sm font-medium mb-4">Drum Pads</h3>
-<div className="grid grid-cols-4 gap-2">
-{drumPadSounds.map((sound, index) => (
-<DrumPad
-key={index}
-name={sound.name}
-category={sound.category}
-color={sound.color}
-icon={sound.icon || 'fa-drum'}
-/>
-))}
-</div>
-</div>
-</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {/* Performance Controls */}
+          <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* XY Pad */}
+            <div className="lg:col-span-4 bg-zinc-800/50 rounded-lg p-4">
+              <h3 className="text-sm font-medium mb-4">XY Performance Pad</h3>
+              <XYPad
+                value={xyPad}
+                onChange={setXyPad}
+              />
+            </div>
+            {/* LFO Controls */}
+            <div className="lg:col-span-4 bg-zinc-800/50 rounded-lg p-4">
+              <h3 className="text-sm font-medium mb-4">LFO</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm mb-2 block">Rate</label>
+                  <Slider
+                    value={lfoRate}
+                    onValueChange={(values) => setLfoRate(values[0])}
+                    max={100}
+                    step={1}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm mb-2 block">Depth</label>
+                  <Slider
+                    value={lfoDepth}
+                    onValueChange={(values) => setLfoDepth(values[0])}
+                    max={100}
+                    step={1}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm mb-2 block">Shape</label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {['sine', 'triangle', 'square', 'saw'].map((shape) => (
+                      <Button
+                        key={shape}
+                        variant="outline"
+                        size="sm"
+                        className={`border-zinc-700 ${
+                          lfoShape === shape ? 'bg-purple-900/30 border-purple-500' : ''
+                        } !rounded-button whitespace-nowrap`}
+                        onClick={() => setLfoShape(shape)}
+                      >
+                        <i className={`fa-solid fa-waveform-${shape}`}></i>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* Drum Pads */}
+            <div className="lg:col-span-4 bg-zinc-800/50 rounded-lg p-4">
+              <h3 className="text-sm font-medium mb-4">Drum Pads</h3>
+              <div className="grid grid-cols-4 gap-2">
+                {drumPadSounds.map((sound, index) => (
+                  <DrumPad
+                    key={index}
+                    name={sound.name}
+                    category={sound.category}
+                    color={sound.color}
+                    icon={sound.icon || 'fa-drum'}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
 
-<TransportControls
-isPlaying={isPlaying}
-onPlayPause={handlePlayPause}
-showRecord={true}
-tempo={tempo}
-onTempoChange={setTempo}
-showResetButton={true}
-showSaveButton={true}
-className="mb-6 mt-6"
-/>
+          <TransportControls
+            isPlaying={isPlaying}
+            onPlayPause={handlePlayPause}
+            showRecord={true}
+            tempo={tempo}
+            onTempoChange={setTempo}
+            showResetButton={true}
+            showSaveButton={true}
+            className="mb-6 mt-6"
+          />
 
-<div className="bg-zinc-800/50 rounded-lg p-4 mb-6">
-<div className="grid grid-cols-16 gap-2">
-{Array.from({ length: 16 }).map((_, index) => (
-<div key={index} className="flex flex-col items-center">
-<div className="mb-2 text-xs text-zinc-500">{index + 1}</div>
-<Pad
-active={activeSequence[index]}
-onClick={() => toggleSequenceStep(index)}
-/>
-<div className="mt-2">
-<Slider
-value={[50]}
-onValueChange={() => {}}
-max={100}
-step={1}
-orientation="vertical"
-className="h-20"
-/>
-</div>
-</div>
-))}
-</div>
-</div>
+          <div className="bg-zinc-800/50 rounded-lg p-4 mb-6">
+            <div className="grid grid-cols-16 gap-2">
+              {Array.from({ length: 16 }).map((_, index) => (
+                <div key={index} className="flex flex-col items-center">
+                  <div className="mb-2 text-xs text-zinc-500">{index + 1}</div>
+                  <Pad
+                    active={activeSequence[index]}
+                    onClick={() => toggleSequenceStep(index)}
+                  />
+                  <div className="mt-2">
+                    <Slider
+                      value={[50]}
+                      onValueChange={() => {}}
+                      max={100}
+                      step={1}
+                      orientation="vertical"
+                      className="h-20"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
 
-<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-<div>
-<h3 className="text-sm text-zinc-400 mb-4">Step Parameters</h3>
-<div className="space-y-4">
-<div className="flex items-center justify-between">
-<span className="text-sm text-zinc-400">Gate</span>
-<div className="w-32">
-<Slider
-value={[75]}
-onValueChange={() => {}}
-max={100}
-step={1}
-/>
-</div>
-<span className="text-sm text-zinc-400">75%</span>
-</div>
-<div className="flex items-center justify-between">
-<span className="text-sm text-zinc-400">Velocity</span>
-<div className="w-32">
-<Slider
-value={[90]}
-onValueChange={() => {}}
-max={100}
-step={1}
-/>
-</div>
-<span className="text-sm text-zinc-400">90%</span>
-</div>
-<div className="flex items-center justify-between">
-<span className="text-sm text-zinc-400">Pitch</span>
-<div className="w-32">
-<Slider
-value={[50]}
-onValueChange={() => {}}
-max={100}
-step={1}
-/>
-</div>
-<span className="text-sm text-zinc-400">0</span>
-</div>
-</div>
-</div>
-<div>
-<h3 className="text-sm text-zinc-400 mb-4">Modulation</h3>
-<div className="space-y-4">
-<div className="flex items-center justify-between">
-<span className="text-sm text-zinc-400">Filter</span>
-<div className="w-32">
-<Slider
-value={[60]}
-onValueChange={() => {}}
-max={100}
-step={1}
-/>
-</div>
-<span className="text-sm text-zinc-400">60%</span>
-</div>
-<div className="flex items-center justify-between">
-<span className="text-sm text-zinc-400">Resonance</span>
-<div className="w-32">
-<Slider
-value={[40]}
-onValueChange={() => {}}
-max={100}
-step={1}
-/>
-</div>
-<span className="text-sm text-zinc-400">40%</span>
-</div>
-<div className="flex items-center justify-between">
-<span className="text-sm text-zinc-400">Decay</span>
-<div className="w-32">
-<Slider
-value={[25]}
-onValueChange={() => {}}
-max={100}
-step={1}
-/>
-</div>
-<span className="text-sm text-zinc-400">25%</span>
-</div>
-</div>
-</div>
-<div>
-<h3 className="text-sm text-zinc-400 mb-4">Sequence Settings</h3>
-<div className="space-y-4">
-<div className="flex items-center space-x-2">
-<Switch checked={false} onChange={() => {}} />
-<label className="text-sm text-zinc-400 cursor-pointer">Loop Sequence</label>
-</div>
-<div className="flex items-center space-x-2">
-<Switch checked={true} onChange={() => {}} />
-<label className="text-sm text-zinc-400 cursor-pointer">Quantize</label>
-</div>
-<div className="flex items-center space-x-2">
-<Switch checked={false} onChange={() => {}} />
-<label className="text-sm text-zinc-400 cursor-pointer">Swing</label>
-</div>
-<div className="pt-2">
-<Button variant="outline" size="sm" className="w-full border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">
-<i className="fa-solid fa-random mr-2"></i>
-Randomize
-</Button>
-</div>
-</div>
-</div>
-</div>
-</div>
-</TabsContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <h3 className="text-sm text-zinc-400 mb-4">Step Parameters</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-zinc-400">Gate</span>
+                  <div className="w-32">
+                    <Slider
+                      value={[75]}
+                      onValueChange={() => {}}
+                      max={100}
+                      step={1}
+                    />
+                  </div>
+                  <span className="text-sm text-zinc-400">75%</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-zinc-400">Velocity</span>
+                  <div className="w-32">
+                    <Slider
+                      value={[90]}
+                      onValueChange={() => {}}
+                      max={100}
+                      step={1}
+                    />
+                  </div>
+                  <span className="text-sm text-zinc-400">90%</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-zinc-400">Pitch</span>
+                  <div className="w-32">
+                    <Slider
+                      value={[50]}
+                      onValueChange={() => {}}
+                      max={100}
+                      step={1}
+                    />
+                  </div>
+                  <span className="text-sm text-zinc-400">0</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-sm text-zinc-400 mb-4">Modulation</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-zinc-400">Filter</span>
+                  <div className="w-32">
+                    <Slider
+                      value={[60]}
+                      onValueChange={() => {}}
+                      max={100}
+                      step={1}
+                    />
+                  </div>
+                  <span className="text-sm text-zinc-400">60%</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-zinc-400">Resonance</span>
+                  <div className="w-32">
+                    <Slider
+                      value={[40]}
+                      onValueChange={() => {}}
+                      max={100}
+                      step={1}
+                    />
+                  </div>
+                  <span className="text-sm text-zinc-400">40%</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-zinc-400">Decay</span>
+                  <div className="w-32">
+                    <Slider
+                      value={[25]}
+                      onValueChange={() => {}}
+                      max={100}
+                      step={1}
+                    />
+                  </div>
+                  <span className="text-sm text-zinc-400">25%</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-sm text-zinc-400 mb-4">Sequence Settings</h3>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Switch checked={false} onChange={() => {}} />
+                  <label className="text-sm text-zinc-400 cursor-pointer">Loop Sequence</label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch checked={true} onChange={() => {}} />
+                  <label className="text-sm text-zinc-400 cursor-pointer">Quantize</label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch checked={false} onChange={() => {}} />
+                  <label className="text-sm text-zinc-400 cursor-pointer">Swing</label>
+                </div>
+                <div className="pt-2">
+                  <Button variant="outline" size="sm" className="w-full border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">
+                    <i className="fa-solid fa-random mr-2"></i>
+                    Randomize
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </TabsContent>
 
-<TabsContent value="effects" className="mt-0">
-<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-<EffectPanel
-title="Delay"
-color="#6366f1"
-parameters={[
-{ name: "Time", value: delay, onChange: setDelay },
-{ name: "Feedback", value: 40, onChange: () => {} },
-{ name: "Mix", value: 70, onChange: () => {} }
-]}
-toggles={[
-{ id: "sync", label: "Sync to Tempo", checked: true, onChange: () => {} }
-]}
-/>
+      <TabsContent value="effects" className="mt-0">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Effects Panel Component */}
+          <EffectPanel />
+        </div>
+      </TabsContent>
 
-<EffectPanel
-title="Reverb"
-color="#ec4899"
-parameters={[
-{ name: "Size", value: reverb, onChange: setReverb },
-{ name: "Damping", value: 60, onChange: () => {} },
-{ name: "Mix", value: 35, onChange: () => {} }
-]}
-options={{
-name: "Type",
-value: ["Hall", "Room", "Plate", "Chamber"],
-selected: "Hall",
-onChange: () => {}
-}}
-/>
-
-<EffectPanel
-title="Modulation"
-color="#0ea5e9"
-parameters={[
-{ name: "Rate", value: modulation, onChange: setModulation },
-{ name: "Depth", value: 50, onChange: () => {} },
-{ name: "Mix", value: 30, onChange: () => {} }
-]}
-buttons={[
-{ label: "Chorus", isActive: true, onClick: () => {} },
-{ label: "Phaser", isActive: false, onClick: () => {} },
-{ label: "Flanger", isActive: false, onClick: () => {} },
-{ label: "Tremolo", isActive: false, onClick: () => {} }
-]}
-/>
-</div>
-</TabsContent>
-</Tabs>
-</div>
+      <TabsContent value="drumsynth" className="mt-0">
+        <div className="grid grid-cols-1 gap-6">
+          {/* Mixer Panel Component */}
+          <MixerPanel />
+        </div>
+      </TabsContent>
+    </Tabs>
+  </div>
 </section>
 
 <section className="mb-16">

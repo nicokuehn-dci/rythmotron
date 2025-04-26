@@ -115,3 +115,31 @@ body {
   mix-blend-mode: overlay;
   z-index: 1;
 }
+
+/* Grid-aligned sliders */
+.grid-aligned-slider {
+  /* Ensure sliders move in consistent steps */
+  --grid-step: 5%;
+  --grid-line-color: rgba(255, 255, 255, 0.1);
+}
+
+.grid-aligned-slider:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent calc(var(--grid-step) - 1px),
+    var(--grid-line-color) var(--grid-step)
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.grid-fader-container {
+  position: relative;
+}

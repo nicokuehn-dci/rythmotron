@@ -1,11 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import Modal from '@/components/ui/modal';
+import RythmotronComponentsGuide from './RythmotronComponentsGuide';
+import withErrorBoundary from './ui/withErrorBoundary';
 
 interface HeaderProps {
   className?: string;
 }
 
-export const Header: React.FC<HeaderProps> = ({ className = '' }) => {
+export const HeaderBase: React.FC<HeaderProps> = ({ className = '' }) => {
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
+
   return (
     <header className={`border-b border-zinc-800 bg-zinc-900 ${className}`}>
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -25,14 +30,32 @@ export const Header: React.FC<HeaderProps> = ({ className = '' }) => {
           <a href="#" className="text-zinc-300 hover:text-white transition-colors cursor-pointer">
             Presets
           </a>
-          <a href="#" className="text-zinc-300 hover:text-white transition-colors cursor-pointer">
-            Documentation
+          <a 
+            href="#" 
+            className="text-zinc-300 hover:text-white transition-colors cursor-pointer"
+            onClick={(e) => {
+              e.preventDefault();
+              setIsGuideOpen(true);
+            }}
+          >
+            Rythmotron Guide
+            <i className="fa-solid fa-book ml-2 text-orange-400"></i>
           </a>
           <a href="#" className="text-zinc-300 hover:text-white transition-colors cursor-pointer">
             Support
           </a>
         </nav>
         <div className="flex items-center space-x-4">
+          {/* Guide-Button für mobile Ansicht - in Orange mit schwarzer Schrift und 3D-Effekt */}
+          <Button
+            variant="3d"
+            className="md:hidden !rounded-button whitespace-nowrap transform-gpu bg-gradient-to-br from-orange-400 to-orange-500 text-black font-medium shadow-lg shadow-orange-500/30 border-b-2 border-orange-700"
+            onClick={() => setIsGuideOpen(true)}
+          >
+            <i className="fa-solid fa-book mr-2"></i>
+            Guide
+          </Button>
+
           <Button
             variant="3d"
             className="!rounded-button whitespace-nowrap transform-gpu"
@@ -49,8 +72,20 @@ export const Header: React.FC<HeaderProps> = ({ className = '' }) => {
           </Button>
         </div>
       </div>
+
+      {/* Modal für den Rythmotron-Komponenten-Guide */}
+      <Modal
+        isOpen={isGuideOpen}
+        onClose={() => setIsGuideOpen(false)}
+        title="Rythmotron - Analog Rytm MKII Komponenten Guide"
+        size="full"
+      >
+        <RythmotronComponentsGuide />
+      </Modal>
     </header>
   );
 };
 
+// Mit ErrorBoundary umwickeln
+const Header = withErrorBoundary(HeaderBase, 'Header');
 export default Header;

@@ -1,0 +1,205 @@
+/* OmniChannelStrip.module.css */
+:root {
+    --channel-color: #60a5fa; /* Default, wird per style prop überschrieben */
+    --color-text-light: #e2e8f0; /* Helleres Grau für Text */
+    --color-text-dim: #94a3b8;   /* Dimmeres Grau */
+    
+    /* Updated gradients from gradient.md */
+    --color-panel-start: #262626;
+    --color-panel-end: #1c1c1c;
+    --color-module-start: #2a2a2a;
+    --color-module-end: #1a1a1a;
+    
+    /* Additional gradients from gradient.md */
+    --color-knob-base-start: #333333;
+    --color-knob-base-end: #1e1e1e;
+    --color-knob-indicator: #60a5fa;
+    --color-button-off-start: #2a2a2a;
+    --color-button-off-end: #1a1a1a;
+    --color-button-on-start: #3b82f6;
+    --color-button-on-end: #1d4ed8;
+    --color-fader-track-start: #262626;
+    --color-fader-track-end: #0f0f0f;
+    --color-fader-handle-start: #475569;
+    --color-fader-handle-end: #334155;
+    
+    /* Waveform chart colors */
+    --color-waveform-line: #4ade80; /* Green line */
+    --color-waveform-area-gradient: linear-gradient(180deg, rgba(74, 222, 128, 0.5) 0%, rgba(74, 222, 128, 0.1) 100%);
+    
+    /* Spectrum chart bar gradients */
+    --color-spectrum-bar-gradient: linear-gradient(180deg, #a855f7 0%, #6366f1 100%); /* Purple to indigo */
+    
+    /* LED gradients */
+    --color-led-active-start: #42dcdb;
+    --color-led-active-end: #20a5a4;
+    --color-led-active-gradient: linear-gradient(145deg, var(--color-led-active-start), var(--color-led-active-end));
+    
+    /* Button Premium gradient */
+    --color-button-premium-gradient: linear-gradient(145deg, #60a5fa, #3b82f6);
+    
+    --border-module: #475569;      /* Mittelgrau-Blau für Ränder */
+    --shadow-standard: 0px 2px 4px rgba(0, 0, 0, 0.3),
+                       inset 0px 1px 0px rgba(255, 255, 255, 0.1);
+    --shadow-inset: inset 2px 2px 5px rgba(0, 0, 0, 0.5),
+                    inset -1px -1px 3px rgba(255, 255, 255, 0.05);
+    --accent-glow: rgba(66, 220, 219, 0.5);
+    
+    /* Additional shadow effects from gradient.md */
+    --shadow-glow: 0 0 8px var(--accent-glow);
+    --shadow-premium-button: 0 2px 4px rgba(0, 0, 0, 0.3),
+                            0 0 8px rgba(96, 165, 250, 0.5);
+}
+  
+.channelStripOmni {
+    display: flex;
+    flex-direction: column;
+    width: 220px; /* Breite für einen komplexen Strip */
+    height: 800px; /* Beispiel Höhe */
+    background: linear-gradient(to bottom, var(--color-panel-start), var(--color-panel-end));
+    border-radius: 6px;
+    border: 1px solid #1a1a1a;
+    box-shadow: var(--shadow-standard);
+    padding: 8px;
+    color: var(--color-text-light);
+    font-family: sans-serif;
+    border-left: 4px solid var(--channel-color); /* Farbiger Akzent */
+}
+  
+.header {
+    padding-bottom: 6px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid var(--border-module);
+    text-align: center;
+}
+  
+.channelName {
+    font-weight: 600;
+    color: white;
+    font-size: 0.9em;
+}
+  
+.moduleSection {
+    background: linear-gradient(145deg, var(--color-module-start), var(--color-module-end));
+    border: 1px solid var(--border-module);
+    border-radius: 4px;
+    padding: 6px;
+    margin-bottom: 8px;
+    box-shadow: var(--shadow-inset);
+}
+.outputSection {
+      flex-grow: 1; /* Lässt Output-Sektion den Rest füllen */
+      display: flex;
+      flex-direction: column;
+}
+  
+  
+.moduleTitle {
+    font-size: 0.7em;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: var(--color-text-dim);
+    text-align: center;
+    margin-bottom: 8px;
+    padding-bottom: 3px;
+    border-bottom: 1px solid rgba(71, 85, 105, 0.5); /* Leichte Trennlinie */
+}
+  
+.controlsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(45px, 1fr)); /* Responsives Grid */
+    gap: 6px;
+    align-items: start; /* Sorgt dafür, dass Wrapper oben starten */
+    justify-items: center; /* Zentriert Wrapper horizontal */
+}
+  
+/* --- Placeholder Styles (ersetze durch deine echten Component-Styles) --- */
+.controlWrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+  
+.knobPlaceholder {
+    width: 30px;
+    height: 30px;
+    background: linear-gradient(145deg, var(--color-knob-base-start), var(--color-knob-base-end)); /* Updated knob gradient */
+    border: 1px solid #1a1a1a;
+    border-radius: 50%;
+    box-shadow: var(--shadow-inset);
+    margin-bottom: 3px;
+}
+  
+.controlLabel {
+    font-size: 0.65em;
+    color: var(--color-text-dim);
+    margin-top: 1px;
+}
+  
+.buttonPlaceholder {
+    padding: 4px 7px;
+    font-size: 0.7em;
+    background: linear-gradient(145deg, var(--color-button-off-start), var(--color-button-off-end)); /* Updated to Button Premium */
+    color: var(--color-text-light);
+    border: 1px solid rgba(80, 80, 80, 0.4);
+    border-radius: 3px;
+    cursor: pointer;
+    box-shadow: var(--shadow-standard);
+    transition: all 0.1s ease-in-out;
+    min-width: 30px; /* Mindestbreite für kleine Buttons */
+    text-align: center;
+}
+.buttonPlaceholder:hover {
+    filter: brightness(1.2);
+}
+.buttonPlaceholder.active {
+    background: linear-gradient(145deg, var(--color-button-on-start), var(--color-button-on-end)); /* Updated LED active gradient */
+    color: #064e3b;
+    box-shadow: 0 0 5px rgba(66, 220, 219, 0.7), 0 0 15px rgba(66, 220, 219, 0.5);
+    border-color: #20a5a4;
+}
+  
+.faderMeterWrapper {
+      display: flex;
+      flex-grow: 1; /* Nimmt verfügbaren Platz in Output Sektion ein */
+      align-items: stretch; /* Elemente strecken sich vertikal */
+      padding-top: 5px;
+}
+  
+.faderControls {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between; /* Verteilt Pan, M, S */
+      align-items: center;
+      margin-right: 8px;
+}
+.faderControls .knobPlaceholder { width: 24px; height: 24px; }
+.faderControls .buttonPlaceholder { width: 24px; height: 20px; padding: 2px; font-size: 0.6em; }
+.muteButton.active { background: linear-gradient(145deg, #f87171, #ef4444); color: white; border-color: #b91c1c; }
+.soloButton.active { background: linear-gradient(145deg, #facc15, #eab308); color: #713f12; border-color: #ca8a04; }
+  
+.faderPlaceholderWrapper {
+      flex-grow: 1; /* Nimmt den meisten Platz ein */
+      height: 100%; /* Wichtig für internen Fader */
+      display: flex;
+      justify-content: center; /* Zentriert Fader-Bahn */
+}
+.faderTrack {
+    width: 8px;
+    height: 100%;
+    background: linear-gradient(to right, var(--color-fader-track-start), var(--color-fader-track-end));
+    border-radius: 4px;
+    position: relative;
+    box-shadow: var(--shadow-inset);
+}
+.faderThumb {
+    position: absolute;
+    left: -4px;
+    width: 16px;
+    height: 25px;
+    background: linear-gradient(145deg, var(--color-knob-base-start), var(--color-knob-base-end)); /* Updated to match knob gradient */
+    border: 1px solid #444;
+    border-radius: 2px;
+    box-shadow: var(--shadow-standard);
+    cursor: ns-resize;
+}

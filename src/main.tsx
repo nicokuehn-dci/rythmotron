@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+// Import die Hauptanwendung wieder
 import App from '../ARythm-EMU-2050-Knob-UI';
 import './index.css';
 import ErrorBoundary, { RuntimeErrorHandler } from './components/ui/ErrorHandler';
@@ -49,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (rootElement) {
     ReactDOM.createRoot(rootElement).render(
       <React.StrictMode>
-        {/* Wrap the entire application with error handling */}
+        {/* Verwende die Hauptanwendung wieder */}
         <ErrorBoundary>
           <RuntimeErrorHandler>
             <App />

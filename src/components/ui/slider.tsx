@@ -13,6 +13,10 @@ interface SliderProps {
   className?: string;
   formatValue?: (value: number) => string;
   showValue?: boolean;
+  snapToGrid?: boolean; // Added prop for explicit grid snapping
+  gridSize?: number; // Added prop for custom grid size
+  showGridLines?: boolean; // Added prop to control grid line visibility
+  gridLineColor?: string; // Added prop to control grid line color
 }
 
 const Slider: React.FC<SliderProps> = ({
@@ -27,7 +31,13 @@ const Slider: React.FC<SliderProps> = ({
   orientation = 'horizontal',
   className = '',
   formatValue,
-  showValue = true
+  showValue = true,
+  snapToGrid = true, // Default to false for backward compatibility
+  gridSize = 20
+
+  , // Default grid size of 5
+  showGridLines = true, // Show grid lines by default when snapToGrid is true
+  gridLineColor = 'rgba(255, 255, 255, 0.15)' // Default grid line color
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
@@ -42,7 +52,7 @@ const Slider: React.FC<SliderProps> = ({
   const thumbSizeMap = {
     sm: 'w-3 h-3',
     md: 'w-4 h-4',
-    lg: 'w-5 h-5',
+    lg: 'w-5 h-5',    
   };
   
   // Calculate percentage for positioning
@@ -89,14 +99,22 @@ const Slider: React.FC<SliderProps> = ({
       newValue = Math.round(newValue / step) * step;
     }
     
+    // Apply additional grid snapping if enabled
+    if (snapToGrid) {
+      newValue = Math.round(newValue / gridSize) * gridSize;
+    }
+    
     // Ensure value is within bounds
     newValue = Math.max(min, Math.min(max, newValue));
-    
+      
     onChange(newValue);
   };
   
   // Format display value
   const displayValue = formatValue ? formatValue(value) : value.toString();
+  
+  // Calculate the number of grid lines to show
+  const gridLines = snapToGrid || step > 0 ? Math.floor((max - min) / (snapToGrid ? gridSize : step)) + 1 : 0;
   
   return (
     <div 
@@ -125,6 +143,16 @@ const Slider: React.FC<SliderProps> = ({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
+        style={{
+          backgroundImage: (snapToGrid && showGridLines) ? `repeating-linear-gradient(
+            ${orientation === 'horizontal' ? '90deg' : '0deg'},
+            transparent,
+            transparent calc(${100/gridLines}% - 1px),
+            ${gridLineColor} calc(${100/gridLines}% - 1px),
+            ${gridLineColor} ${100/gridLines}%
+          )` : 'none',
+          backgroundSize: '100% 100%'
+        }}
       >
         {/* Track fill */}
         <div
@@ -165,19 +193,19 @@ const Slider: React.FC<SliderProps> = ({
           />
         </div>
         
-        {/* Tick marks for steps */}
-        {step > 0 && step < (max - min) / 4 && (
-          <div className="absolute inset-0 flex items-center justify-between pointer-events-none">
-            {Array.from({ length: Math.floor((max - min) / step) + 1 }).map((_, i) => {
-              const tickPercent = (i * step) / (max - min) * 100;
+        {/* Grid lines for steps */}
+        {showGridLines && gridLines > 0 && (
+          <div className="absolute inset-0 pointer-events-none grid-lines">
+            {Array.from({ length: gridLines }).map((_, i) => {
+              const linePosition = i / (gridLines - 1) * 100;
               return (
                 <div
                   key={i}
-                  className="bg-zinc-600 opacity-30"
+                  className="absolute bg-white/20"
                   style={{
                     ...(orientation === 'horizontal'
-                      ? { width: '1px', height: '6px', marginTop: 'auto' }
-                      : { height: '1px', width: '6px', marginLeft: 'auto' })
+                      ? { width: '1px', height: '100%', left: `${linePosition}%` }
+                      : { height: '1px', width: '100%', bottom: `${linePosition}%` })
                   }}
                 />
               );
