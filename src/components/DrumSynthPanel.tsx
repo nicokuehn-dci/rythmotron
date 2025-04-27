@@ -11,6 +11,23 @@ import KnobWrapper from './KnobWrapper';
 import { DrumSynthType, OscillatorType } from '../lib/services/Sequencer';
 import audioEngine from '../lib/services/AudioEngine';
 
+// Erweiterte Interface-Definitionen für mehr Kontrolle über Drum-Synth-Parameter
+interface DrumSynthParams {
+  velocity: number;
+  decay: number;
+  tone: number;
+  tuning: number;
+  attack: number;
+  snappy: number;
+  color: number;
+  
+  // Erweiterte Parameter aus der drumsynthese.md:
+  pitchEnvAmount?: number;  // Stärke der Tonhöhenveränderung
+  pitchEnvDecay?: number;   // Geschwindigkeit der Tonhöhenänderung
+  filterType?: string;      // Filtertypen (lpf, hpf, bpf)
+  synthModel?: string;      // 808, 909 oder modern
+}
+
 interface DrumSynthPanelProps {
   className?: string;
   selectedTrack?: number;
@@ -38,9 +55,27 @@ const DrumSynthPanel: React.FC<DrumSynthPanelProps> = ({
   const [snappy, setSnappy] = useState(50);  // Für Snare: Noise/Tone-Verhältnis
   const [color, setColor] = useState(50);    // Für Hats/Percussion: Spektrale Farbe
   
+  // Neue erweiterte Parameter
+  const [pitchEnvAmount, setPitchEnvAmount] = useState(50);
+  const [pitchEnvDecay, setPitchEnvDecay] = useState(30);
+  const [filterType, setFilterType] = useState<'lpf' | 'hpf' | 'bpf' | 'none'>('lpf');
+  const [filterCutoff, setFilterCutoff] = useState(75);
+  const [filterResonance, setFilterResonance] = useState(20);
+  const [filterEnvAmount, setFilterEnvAmount] = useState(30);
+  const [oscType, setOscType] = useState<OscillatorType>(OscillatorType.SINE);
+  const [noiseAmount, setNoiseAmount] = useState(30);
+  const [noiseType, setNoiseType] = useState<'white' | 'pink' | 'filtered'>('white');
+  const [synthModel, setSynthModel] = useState<'808' | '909' | 'modern'>('808');
+  
+  // LFO-Parameter
+  const [lfoAmount, setLfoAmount] = useState(0);
+  const [lfoRate, setLfoRate] = useState(50);
+  const [lfoTarget, setLfoTarget] = useState<'pitch' | 'filter' | 'amp' | 'none'>('none');
+  
   // State variables for UI controls
   const [masterVolume, setMasterVolume] = useState<number>(80);
   const [viewMode, setViewMode] = useState<'basic' | 'advanced'>('basic');
+  const [engineView, setEngineView] = useState<'classic' | 'modern'>('classic'); 
 
   // Aktuelle Synth-Typ aus trackData
   const synthType = trackData?.synthType || DrumSynthType.TR808_KICK;
@@ -80,6 +115,31 @@ const DrumSynthPanel: React.FC<DrumSynthPanelProps> = ({
       case 'color':
         setColor(value);
         break;
+      // Neue erweiterte Parameter
+      case 'pitchEnvAmount':
+        setPitchEnvAmount(value);
+        break;
+      case 'pitchEnvDecay':
+        setPitchEnvDecay(value);
+        break;
+      case 'filterCutoff':
+        setFilterCutoff(value);
+        break;
+      case 'filterResonance':
+        setFilterResonance(value);
+        break;
+      case 'filterEnvAmount':
+        setFilterEnvAmount(value);
+        break;
+      case 'noiseAmount':
+        setNoiseAmount(value);
+        break;
+      case 'lfoAmount':
+        setLfoAmount(value);
+        break;
+      case 'lfoRate':
+        setLfoRate(value);
+        break;
     }
     
     onParameterChange(param, value);
@@ -100,10 +160,73 @@ const DrumSynthPanel: React.FC<DrumSynthPanelProps> = ({
       attack: attack / 100,
       snappy: snappy / 100,
       color: color / 100,
+      // Neue Parameter
+      pitchEnvAmount: pitchEnvAmount / 100,
+      pitchEnvDecay: pitchEnvDecay / 100,
+      filterCutoff: filterCutoff / 100,
+      filterResonance: filterResonance / 100,
+      filterEnvAmount: filterEnvAmount / 100,
+      oscType,
+      synthModel,
+      filterType,
+      noiseAmount: noiseAmount / 100,
+      noiseType,
+      lfoAmount: lfoAmount / 100,
+      lfoRate: lfoRate / 100,
+      lfoTarget,
       synthType: trackData?.synthType || DrumSynthType.TR808_KICK
     };
     
     audioEngine.synthesizeDrum(params.synthType, params);
+  };
+
+  // Synthmodell ändern (808/909/modern)
+  const handleModelChange = (model: '808' | '909' | 'modern') => {
+    setSynthModel(model);
+    
+    // Voreinstellungen für verschiedene Synthmodelle laden
+    switch (model) {
+      case '808':
+        // Typische Einstellungen für 808-Sound
+        setPitchEnvAmount(60);
+        setPitchEnvDecay(20);
+        setFilterType('lpf');
+        break;
+      case '909':
+        // Typische Einstellungen für 909-Sound 
+        setPitchEnvAmount(40);
+        setPitchEnvDecay(30);
+        setFilterType('lpf');
+        setAttack(80); // Stärkerer Click für 909-Kick
+        break;
+      case 'modern':
+        // Modernere Einstellungen mit mehr Freiheitsgraden
+        setPitchEnvAmount(50);
+        setPitchEnvDecay(50);
+        setFilterType('bpf');
+        setFilterResonance(40);
+        break;
+    }
+  };
+
+  // Filter Type ändern
+  const handleFilterTypeChange = (type: 'lpf' | 'hpf' | 'bpf' | 'none') => {
+    setFilterType(type);
+  };
+
+  // Oszillator Type ändern
+  const handleOscTypeChange = (type: OscillatorType) => {
+    setOscType(type);
+  };
+
+  // Noise Type ändern
+  const handleNoiseTypeChange = (type: 'white' | 'pink' | 'filtered') => {
+    setNoiseType(type);
+  };
+
+  // LFO Target ändern
+  const handleLfoTargetChange = (target: 'pitch' | 'filter' | 'amp' | 'none') => {
+    setLfoTarget(target);
   };
 
   // Zeige unterschiedliche Parameter je nach Synth-Typ
@@ -115,16 +238,16 @@ const DrumSynthPanel: React.FC<DrumSynthPanelProps> = ({
           <>
             <div className="param-row">
               <KnobWrapper
-                label="Attack"
-                value={attack}
-                onChange={(value) => handleChange('attack', value)}
+                label="Tone"
+                value={tone}
+                onChange={(value) => handleChange('tone', value)}
                 min={0}
                 max={100}
               />
               <KnobWrapper
-                label="Tone"
-                value={tone}
-                onChange={(value) => handleChange('tone', value)}
+                label="Attack"
+                value={attack}
+                onChange={(value) => handleChange('attack', value)}
                 min={0}
                 max={100}
               />
@@ -188,7 +311,7 @@ const DrumSynthPanel: React.FC<DrumSynthPanelProps> = ({
             </div>
           </>
         );
-      
+        
       case DrumSynthType.TR808_HAT:
         return (
           <>
@@ -232,18 +355,18 @@ const DrumSynthPanel: React.FC<DrumSynthPanelProps> = ({
                 max={100}
               />
               <KnobWrapper
-                label="Color"
-                value={color}
-                onChange={(value) => handleChange('color', value)}
+                label="Decay"
+                value={decay}
+                onChange={(value) => handleChange('decay', value)}
                 min={0}
                 max={100}
               />
             </div>
             <div className="param-row">
               <KnobWrapper
-                label="Decay"
-                value={decay}
-                onChange={(value) => handleChange('decay', value)}
+                label="Attack"
+                value={attack}
+                onChange={(value) => handleChange('attack', value)}
                 min={0}
                 max={100}
               />
@@ -544,31 +667,169 @@ const DrumSynthPanel: React.FC<DrumSynthPanelProps> = ({
         {viewMode === 'advanced' && (
           <div className="bg-black/20 p-4 rounded-md">
             <h4 className="text-sm font-medium mb-4 uppercase tracking-wider opacity-70">Advanced Controls</h4>
-            <div className="param-row">
+            
+            {/* Synth Model Selection (808/909/Modern) */}
+            <div className="mb-4">
+              <h5 className="text-xs mb-2 opacity-70">Synth Model</h5>
+              <div className="flex space-x-2">
+                <Button 
+                  size="sm" 
+                  variant={synthModel === '808' ? "secondary" : "outline"}
+                  onClick={() => handleModelChange('808')}
+                  className="text-xs"
+                >
+                  TR-808
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant={synthModel === '909' ? "secondary" : "outline"}
+                  onClick={() => handleModelChange('909')}
+                  className="text-xs"
+                >
+                  TR-909
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant={synthModel === 'modern' ? "secondary" : "outline"}
+                  onClick={() => handleModelChange('modern')}
+                  className="text-xs"
+                >
+                  Modern
+                </Button>
+              </div>
+            </div>
+            
+            {/* Pitch Envelope Section */}
+            <div className="mb-4">
+              <h5 className="text-xs mb-2 opacity-70">Pitch Envelope</h5>
+              <div className="param-row">
+                <KnobWrapper
+                  label="Amount"
+                  value={pitchEnvAmount}
+                  onChange={(value) => handleChange('pitchEnvAmount', value)}
+                  min={0}
+                  max={100}
+                />
+                <KnobWrapper
+                  label="Decay"
+                  value={pitchEnvDecay}
+                  onChange={(value) => handleChange('pitchEnvDecay', value)}
+                  min={0}
+                  max={100}
+                />
+              </div>
+            </div>
+            
+            {/* Filter Section */}
+            <div className="mb-4">
+              <h5 className="text-xs mb-2 opacity-70">Filter</h5>
+              <div className="flex space-x-2 mb-2">
+                <Button 
+                  size="sm" 
+                  variant={filterType === 'lpf' ? "secondary" : "outline"}
+                  onClick={() => handleFilterTypeChange('lpf')}
+                  className="text-xs"
+                >
+                  Low Pass
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant={filterType === 'hpf' ? "secondary" : "outline"}
+                  onClick={() => handleFilterTypeChange('hpf')}
+                  className="text-xs"
+                >
+                  High Pass
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant={filterType === 'bpf' ? "secondary" : "outline"}
+                  onClick={() => handleFilterTypeChange('bpf')}
+                  className="text-xs"
+                >
+                  Band Pass
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant={filterType === 'none' ? "secondary" : "outline"}
+                  onClick={() => handleFilterTypeChange('none')}
+                  className="text-xs"
+                >
+                  Off
+                </Button>
+              </div>
+              
+              {filterType !== 'none' && (
+                <div className="param-row">
+                  <KnobWrapper
+                    label="Cutoff"
+                    value={filterCutoff}
+                    onChange={(value) => handleChange('filterCutoff', value)}
+                    min={0}
+                    max={100}
+                  />
+                  <KnobWrapper
+                    label="Resonance"
+                    value={filterResonance}
+                    onChange={(value) => handleChange('filterResonance', value)}
+                    min={0}
+                    max={100}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Noise Generator */}
+            {(synthType === DrumSynthType.TR808_SNARE || 
+              synthType === DrumSynthType.TR909_SNARE || 
+              synthType === DrumSynthType.TR808_HAT ||
+              synthType === DrumSynthType.NOISE) && (
+              <div className="mb-4">
+                <h5 className="text-xs mb-2 opacity-70">Noise Generator</h5>
+                <div className="flex items-center mb-2">
+                  <span className="text-xs mr-2">Type:</span>
+                  <select 
+                    className="bg-black/50 border border-purple-800/50 rounded-md p-1 text-xs"
+                    value={noiseType}
+                    onChange={(e) => handleNoiseTypeChange(e.target.value as any)}
+                  >
+                    <option value="white">White</option>
+                    <option value="pink">Pink</option>
+                    <option value="filtered">Filtered</option>
+                  </select>
+                  <div className="ml-2">
+                    <KnobWrapper
+                      size="small"
+                      label="Amount"
+                      value={noiseAmount}
+                      onChange={(value) => handleChange('noiseAmount', value)}
+                      min={0}
+                      max={100}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Master Controls */}
+            <div className="mt-6 flex justify-between items-end">
               <KnobWrapper
-                label="Master Volume"
+                label="Master Vol"
                 value={masterVolume}
                 onChange={(value) => setMasterVolume(value)}
                 min={0}
                 max={100}
               />
-            </div>
-            
-            <div className="mt-4">
-              <h5 className="text-xs mb-2 opacity-70">Modulation</h5>
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <input type="checkbox" id="lfo-enable" className="accent-purple-600" />
-                  <label htmlFor="lfo-enable" className="text-xs">LFO</label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <input type="checkbox" id="env-enable" className="accent-purple-600" />
-                  <label htmlFor="env-enable" className="text-xs">Envelope</label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <input type="checkbox" id="rand-enable" className="accent-purple-600" />
-                  <label htmlFor="rand-enable" className="text-xs">Randomize</label>
-                </div>
+              
+              <div className="text-right">
+                <p className="text-xs opacity-70 mb-1">Synth Model: {synthModel.toUpperCase()}</p>
+                <Button 
+                  size="sm" 
+                  variant="default" 
+                  onClick={testSound}
+                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  Test with Settings
+                </Button>
               </div>
             </div>
           </div>

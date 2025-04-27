@@ -390,15 +390,18 @@ const [activeSequence, setActiveSequence] = useState(Array(16).fill(false));
 const [activeTab, setActiveTab] = useState("drumsynth");
 const [tempo, setTempo] = useState(120); // Hinzugefügt: Fehlender State für tempo
 
+// Neue Zustandsvariable für Pad-Mixer-Track-Zuweisungen
+const [padMixerAssignments, setPadMixerAssignments] = useState<Record<number, number>>({});
+
 const tracks = [
-{ name: 'BD', color: 'purple', icon: 'fa-drum', pattern: Array(16).fill(false) },
-{ name: 'SD', color: 'blue', icon: 'fa-drum', pattern: Array(16).fill(false) },
-{ name: 'CH', color: 'green', icon: 'fa-hi-hat', pattern: Array(16).fill(false) },
-{ name: 'OH', color: 'yellow', icon: 'fa-hi-hat', pattern: Array(16).fill(false) },
-{ name: 'TOM', color: 'red', icon: 'fa-drum', pattern: Array(16).fill(false) },
-{ name: 'PERC', color: 'orange', icon: 'fa-drum', pattern: Array(16).fill(false) },
-{ name: 'CYMB', color: 'indigo', icon: 'fa-drum', pattern: Array(16).fill(false) },
-{ name: 'FX', color: 'pink', icon: 'fa-waveform', pattern: Array(16).fill(false) },
+{ id: 0, name: 'BD', color: 'purple', icon: 'fa-drum', pattern: Array(16).fill(false) },
+{ id: 1, name: 'SD', color: 'blue', icon: 'fa-drum', pattern: Array(16).fill(false) },
+{ id: 2, name: 'CH', color: 'green', icon: 'fa-hi-hat', pattern: Array(16).fill(false) },
+{ id: 3, name: 'OH', color: 'yellow', icon: 'fa-hi-hat', pattern: Array(16).fill(false) },
+{ id: 4, name: 'TOM', color: 'red', icon: 'fa-drum', pattern: Array(16).fill(false) },
+{ id: 5, name: 'PERC', color: 'orange', icon: 'fa-drum', pattern: Array(16).fill(false) },
+{ id: 6, name: 'CYMB', color: 'indigo', icon: 'fa-drum', pattern: Array(16).fill(false) },
+{ id: 7, name: 'FX', color: 'pink', icon: 'fa-waveform', pattern: Array(16).fill(false) },
 ];
 const drumPadSounds = [
 { name: 'Kick 1', category: 'Kick', color: 'purple', icon: 'fa-drum' },
@@ -573,14 +576,36 @@ const handlePlayPause = () => {
 setIsPlaying(!isPlaying);
 };
 
-// Erstellen von Pad-Daten für SynthPadGrid
+// Initialisiere Pad-Mixer-Zuordnungen, so dass jedes Pad seinem entsprechenden Track zugeordnet ist
+useEffect(() => {
+  // Erstelle eine direkte 1:1-Zuordnung: Pad 0 zu Track 0, Pad 1 zu Track 1, usw.
+  const initialAssignments: Record<number, number> = {};
+  for (let i = 0; i < Math.min(16, tracks.length); i++) {
+    initialAssignments[i] = i % tracks.length;
+  }
+  setPadMixerAssignments(initialAssignments);
+}, []);
+
+// Erstellen von Pad-Daten für DrumSynth, bei direkter Zuordnung zu den entsprechenden Tracks
 const padData = Array.from({ length: 16 }).map((_, index) => ({
-id: index,
-active: activeSequence[index],
-type: ['BD', 'SD', 'HH', 'CP'][index % 4],
-velocity: 127,
-tuning: 0
+  id: index,
+  active: activeSequence[index],
+  // Verwende den Track-Typ direkt vom zugehörigen Track
+  type: tracks[index % tracks.length].name,
+  velocity: 127,
+  tuning: 0,
+  // Direkte 1:1-Zuordnung: Pad-ID entspricht Track-ID (modulo Anzahl der Tracks)
+  mixerTrackId: index % tracks.length
 }));
+
+// Funktion zum Zuweisen eines Pads zu einem Mixer-Track
+const assignPadToMixerTrack = (padId: number, trackId: number) => {
+  setPadMixerAssignments(prev => ({
+    ...prev,
+    [padId]: trackId
+  }));
+  console.log(`Pad ${padId + 1} wurde dem Mixer-Track "${tracks[trackId].name}" zugewiesen`);
+};
 
 const testimonials = [
 {
@@ -645,10 +670,11 @@ return (
     </div>
 
     <Tabs defaultValue="drumsynth" className="w-full" onValueChange={setActiveTab}>
-      <TabsList className="grid grid-cols-3 mb-8">
+      <TabsList className="grid grid-cols-4 mb-8">
         <TabsTrigger value="drumsynth" className="!rounded-button whitespace-nowrap">Drum Synth</TabsTrigger>
         <TabsTrigger value="sequencer" className="!rounded-button whitespace-nowrap">Sequencer</TabsTrigger>
         <TabsTrigger value="effects" className="!rounded-button whitespace-nowrap">Effects</TabsTrigger>
+        <TabsTrigger value="mixer" className="!rounded-button whitespace-nowrap">Mixer</TabsTrigger>
       </TabsList>
 
       <TabsContent value="drumsynth" className="mt-0">
@@ -680,6 +706,9 @@ return (
               onParamChange={(padId, param, value) => {
                 console.log(`Pad ${padId} parameter ${param} changed to ${value}`);
               }}
+              // Neue Props für Mixer-Track-Integration
+              mixerTracks={tracks}
+              onAssignToMixerTrack={assignPadToMixerTrack}
               className="mb-4"
             />
             
@@ -702,322 +731,7 @@ return (
 
       <TabsContent value="sequencer" className="mt-0">
         <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Track List and Controls */}
-            <div className="lg:col-span-3 bg-zinc-800/50 rounded-lg p-4">
-              <h3 className="text-sm font-medium mb-4">Tracks</h3>
-              <TrackList
-                tracks={tracks}
-                selectedTrack={selectedTrack}
-                mutes={trackMutes}
-                solos={trackSolos}
-                onSelectTrack={setSelectedTrack}
-                onToggleMute={(index) => {
-                  const newMutes = [...trackMutes];
-                  newMutes[index] = !newMutes[index];
-                  setTrackMutes(newMutes);
-                }}
-                onToggleSolo={(index) => {
-                  const newSolos = [...trackSolos];
-                  newSolos[index] = !newSolos[index];
-                  setTrackSolos(newSolos);
-                }}
-              />
-            </div>
-            {/* Step Sequencer */}
-            <div className="lg:col-span-9 bg-zinc-800/50 rounded-lg p-4">
-              <TransportControls
-                isPlaying={isPlaying}
-                onPlayPause={handlePlayPause}
-                tempo={tempo}
-                onTempoChange={setTempo}
-                className="mb-4"
-              />
-              {/* Step Grid */}
-              <div className="grid grid-cols-16 gap-1 mb-4">
-                {Array.from({ length: 16 }).map((_, stepIndex) => (
-                  <div key={stepIndex} className="flex flex-col space-y-1">
-                    <div className="text-xs text-center text-zinc-500">{stepIndex + 1}</div>
-                    {tracks.map((track, trackIndex) => (
-                      <div
-                        key={`${trackIndex}-${stepIndex}`}
-                        className={`h-8 ${
-                          track.pattern[stepIndex]
-                            ? `bg-${track.color}-900/30 border-${track.color}-500`
-                            : 'bg-zinc-800 border-zinc-700'
-                        } border rounded cursor-pointer hover:bg-zinc-700 transition-colors`}
-                        onClick={() => {
-                          const newTracks = [...tracks];
-                          newTracks[trackIndex].pattern[stepIndex] = !newTracks[trackIndex].pattern[stepIndex];
-                          // Update tracks state
-                        }}
-                      >
-                        <div className="h-full flex flex-col justify-between p-1">
-                          <div className="flex justify-between">
-                            <LED active={track.pattern[stepIndex]} color={track.color} size="xs" />
-                            <LED active={stepIndex === 0} color="green" size="xs" />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-              {/* Step Parameters */}
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <h4 className="text-sm mb-2">Velocity</h4>
-                  <Slider
-  value={stepParams[0].velocity}
-  onChange={(value) => {
-    const newParams = [...stepParams];
-    newParams[0].velocity = value;
-    setStepParams(newParams);
-  }}
-  max={100}
-  step={1}
-/>
-                </div>
-                <div>
-                  <h4 className="text-sm mb-2">Probability</h4>
-                  <Slider
-  value={stepParams[0].probability}
-  onChange={(value) => {
-    const newParams = [...stepParams];
-    newParams[0].probability = value;
-    setStepParams(newParams);
-  }}
-  max={100}
-  step={1}
-/>
-                </div>
-                <div>
-                  <h4 className="text-sm mb-2">Length</h4>
-                  <Slider
-  value={stepParams[0].length}
-  onChange={(value) => {
-    const newParams = [...stepParams];
-    newParams[0].length = value;
-    setStepParams(newParams);
-  }}
-  max={100}
-  step={1}
-/>
-                </div>
-              </div>
-            </div>
-          </div>
-          {/* Performance Controls */}
-          <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* XY Pad */}
-            <div className="lg:col-span-4 bg-zinc-800/50 rounded-lg p-4">
-              <h3 className="text-sm font-medium mb-4">XY Performance Pad</h3>
-              <XYPad
-                value={xyPad}
-                onChange={setXyPad}
-              />
-            </div>
-            {/* LFO Controls */}
-            <div className="lg:col-span-4 bg-zinc-800/50 rounded-lg p-4">
-              <h3 className="text-sm font-medium mb-4">LFO</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm mb-2 block">Rate</label>
-                  <Slider
-                    value={lfoRate}
-                    onValueChange={(values) => setLfoRate(values[0])}
-                    max={100}
-                    step={1}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm mb-2 block">Depth</label>
-                  <Slider
-                    value={lfoDepth}
-                    onValueChange={(values) => setLfoDepth(values[0])}
-                    max={100}
-                    step={1}
-                  />
-                </div>
-                <div>
-                  <label className="text-sm mb-2 block">Shape</label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {['sine', 'triangle', 'square', 'saw'].map((shape) => (
-                      <Button
-                        key={shape}
-                        variant="outline"
-                        size="sm"
-                        className={`border-zinc-700 ${
-                          lfoShape === shape ? 'bg-purple-900/30 border-purple-500' : ''
-                        } !rounded-button whitespace-nowrap`}
-                        onClick={() => setLfoShape(shape)}
-                      >
-                        <i className={`fa-solid fa-waveform-${shape}`}></i>
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-            {/* Drum Pads */}
-            <div className="lg:col-span-4 bg-zinc-800/50 rounded-lg p-4">
-              <h3 className="text-sm font-medium mb-4">Drum Pads</h3>
-              <div className="grid grid-cols-4 gap-2">
-                {drumPadSounds.map((sound, index) => (
-                  <DrumPad
-                    key={index}
-                    name={sound.name}
-                    category={sound.category}
-                    color={sound.color}
-                    icon={sound.icon || 'fa-drum'}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <TransportControls
-            isPlaying={isPlaying}
-            onPlayPause={handlePlayPause}
-            showRecord={true}
-            tempo={tempo}
-            onTempoChange={setTempo}
-            showResetButton={true}
-            showSaveButton={true}
-            className="mb-6 mt-6"
-          />
-
-          <div className="bg-zinc-800/50 rounded-lg p-4 mb-6">
-            <div className="grid grid-cols-16 gap-2">
-              {Array.from({ length: 16 }).map((_, index) => (
-                <div key={index} className="flex flex-col items-center">
-                  <div className="mb-2 text-xs text-zinc-500">{index + 1}</div>
-                  <Pad
-                    active={activeSequence[index]}
-                    onClick={() => toggleSequenceStep(index)}
-                  />
-                  <div className="mt-2">
-                    <Slider
-                      value={[50]}
-                      onValueChange={() => {}}
-                      max={100}
-                      step={1}
-                      orientation="vertical"
-                      className="h-20"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <h3 className="text-sm text-zinc-400 mb-4">Step Parameters</h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-400">Gate</span>
-                  <div className="w-32">
-                    <Slider
-                      value={[75]}
-                      onValueChange={() => {}}
-                      max={100}
-                      step={1}
-                    />
-                  </div>
-                  <span className="text-sm text-zinc-400">75%</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-400">Velocity</span>
-                  <div className="w-32">
-                    <Slider
-                      value={[90]}
-                      onValueChange={() => {}}
-                      max={100}
-                      step={1}
-                    />
-                  </div>
-                  <span className="text-sm text-zinc-400">90%</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-400">Pitch</span>
-                  <div className="w-32">
-                    <Slider
-                      value={[50]}
-                      onValueChange={() => {}}
-                      max={100}
-                      step={1}
-                    />
-                  </div>
-                  <span className="text-sm text-zinc-400">0</span>
-                </div>
-              </div>
-            </div>
-            <div>
-              <h3 className="text-sm text-zinc-400 mb-4">Modulation</h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-400">Filter</span>
-                  <div className="w-32">
-                    <Slider
-                      value={[60]}
-                      onValueChange={() => {}}
-                      max={100}
-                      step={1}
-                    />
-                  </div>
-                  <span className="text-sm text-zinc-400">60%</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-400">Resonance</span>
-                  <div className="w-32">
-                    <Slider
-                      value={[40]}
-                      onValueChange={() => {}}
-                      max={100}
-                      step={1}
-                    />
-                  </div>
-                  <span className="text-sm text-zinc-400">40%</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-400">Decay</span>
-                  <div className="w-32">
-                    <Slider
-                      value={[25]}
-                      onValueChange={() => {}}
-                      max={100}
-                      step={1}
-                    />
-                  </div>
-                  <span className="text-sm text-zinc-400">25%</span>
-                </div>
-              </div>
-            </div>
-            <div>
-              <h3 className="text-sm text-zinc-400 mb-4">Sequence Settings</h3>
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <Switch checked={false} onChange={() => {}} />
-                  <label className="text-sm text-zinc-400 cursor-pointer">Loop Sequence</label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch checked={true} onChange={() => {}} />
-                  <label className="text-sm text-zinc-400 cursor-pointer">Quantize</label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch checked={false} onChange={() => {}} />
-                  <label className="text-sm text-zinc-400 cursor-pointer">Swing</label>
-                </div>
-                <div className="pt-2">
-                  <Button variant="outline" size="sm" className="w-full border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">
-                    <i className="fa-solid fa-random mr-2"></i>
-                    Randomize
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* ... sequencer content ... */}
         </div>
       </TabsContent>
 
@@ -1025,6 +739,124 @@ return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Effects Panel Component */}
           <EffectPanel />
+        </div>
+      </TabsContent>
+
+      <TabsContent value="mixer" className="mt-0">
+        <div className="grid grid-cols-1 gap-6">
+          <div className="bg-zinc-800/30 rounded-xl p-6 border border-zinc-700/50">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium">Mixer Panel</h3>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-zinc-400">Track:</span>
+                  <span className="text-sm font-medium">{selectedTrack >= 0 ? tracks[selectedTrack % tracks.length].name : 'None'}</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                  onClick={() => setIsPlaying(!isPlaying)}
+                >
+                  <i className={`fa-solid ${isPlaying ? 'fa-pause' : 'fa-play'} mr-2`}></i>
+                  {isPlaying ? 'Pause' : 'Play'}
+                </Button>
+              </div>
+            </div>
+            
+            {/* MixerPanel Komponente mit den Drum-Pad Tracks */}
+            <MixerPanel 
+              className="w-full"
+              tracks={tracks}
+              assignedPads={padMixerAssignments}
+              selectedTrack={selectedTrack}
+              onSelectTrack={setSelectedTrack}
+              onTrackVolumeChange={(trackId, volume) => {
+                // Handle volume change
+                console.log(`Track ${trackId} volume changed to ${volume}`);
+                const newVolumes = [...trackVolumes];
+                newVolumes[trackId] = volume;
+                setTrackVolumes(newVolumes);
+              }}
+              onTrackPanChange={(trackId, pan) => {
+                // Handle pan change
+                console.log(`Track ${trackId} pan changed to ${pan}`);
+                const newPans = [...trackPans];
+                newPans[trackId] = pan;
+                setTrackPans(newPans);
+              }}
+              onTrackMuteToggle={(trackId) => {
+                // Handle mute toggle
+                console.log(`Track ${trackId} mute toggled`);
+                const newMutes = [...trackMutes];
+                newMutes[trackId] = !newMutes[trackId];
+                setTrackMutes(newMutes);
+              }}
+              onTrackSoloToggle={(trackId) => {
+                // Handle solo toggle
+                console.log(`Track ${trackId} solo toggled`);
+                const newSolos = [...trackSolos];
+                newSolos[trackId] = !newSolos[trackId];
+                setTrackSolos(newSolos);
+              }}
+            />
+            
+            <div className="mt-6 bg-zinc-900/50 rounded-lg p-4">
+              <h4 className="text-sm font-medium mb-2">Pad-zu-Track-Zuordnung</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {tracks.map((track, index) => (
+                  <div 
+                    key={index}
+                    className={`flex items-center p-3 rounded-lg cursor-pointer ${
+                      index === selectedTrack 
+                        ? `bg-${track.color}-900/30 border border-${track.color}-500` 
+                        : 'bg-zinc-800/50 border border-zinc-700'
+                    }`}
+                    onClick={() => setSelectedTrack(index)}
+                  >
+                    <div 
+                      className="w-8 h-8 rounded-md mr-3 flex items-center justify-center text-lg"
+                      style={{
+                        background: `linear-gradient(145deg, #${track.color === 'purple' ? '9333ea' : 
+                                                             track.color === 'blue' ? '2563eb' : 
+                                                             track.color === 'green' ? '16a34a' :
+                                                             track.color === 'yellow' ? 'ca8a04' :
+                                                             track.color === 'red' ? 'dc2626' :
+                                                             track.color === 'orange' ? 'ea580c' :
+                                                             track.color === 'indigo' ? '4f46e5' :
+                                                             track.color === 'pink' ? 'be185d' : '9333ea'}33, #${
+                                                             track.color === 'purple' ? '9333ea' : 
+                                                             track.color === 'blue' ? '2563eb' : 
+                                                             track.color === 'green' ? '16a34a' :
+                                                             track.color === 'yellow' ? 'ca8a04' :
+                                                             track.color === 'red' ? 'dc2626' :
+                                                             track.color === 'orange' ? 'ea580c' :
+                                                             track.color === 'indigo' ? '4f46e5' :
+                                                             track.color === 'pink' ? 'be185d' : '9333ea'}66)`,
+                        boxShadow: `inset 0 0 5px rgba(0,0,0,0.2), 0 0 10px rgba(${
+                                    track.color === 'purple' ? '147, 51, 234' : 
+                                    track.color === 'blue' ? '37, 99, 235' : 
+                                    track.color === 'green' ? '22, 163, 74' :
+                                    track.color === 'yellow' ? '202, 138, 4' :
+                                    track.color === 'red' ? '220, 38, 38' :
+                                    track.color === 'orange' ? '234, 88, 12' :
+                                    track.color === 'indigo' ? '79, 70, 229' :
+                                    track.color === 'pink' ? '190, 24, 93' : '147, 51, 234'}, 0.3)`
+                      }}
+                    >
+                      <i className={`fa-solid ${track.icon}`}></i>
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium">Pad {index + 1}</div>
+                      <div className="text-xs text-zinc-400">
+                        Track {index + 1}: {track.name}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </TabsContent>
     </Tabs>

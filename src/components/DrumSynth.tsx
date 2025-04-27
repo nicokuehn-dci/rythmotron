@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import LED from './ui/led';
 import withErrorBoundary from './ui/withErrorBoundary';
-import { Slider } from './ui/slider'; // Korrekter Import der Slider-Komponente
-import WaveformDisplay from './WaveformDisplay'; // Importiere die Wellenformanzeige als Default-Export
+import { Slider } from './ui/slider';
+import WaveformDisplay from './WaveformDisplay';
 
 interface DrumPadData {
   id: number;
@@ -14,6 +14,9 @@ interface DrumPadData {
   decay?: number;
   tone?: number;
   color?: string;
+  // Neue Properties für die Mixer-Track-Zuordnung
+  mixerTrackId?: number;
+  routingEnabled?: boolean;
 }
 
 interface DrumSynthProps {
@@ -24,6 +27,9 @@ interface DrumSynthProps {
   selectedPad?: number;
   onSelectPad?: (id: number) => void;
   onParamChange?: (padId: number, param: string, value: number) => void;
+  // Neue Props für Mixer-Integration
+  onAssignToMixerTrack?: (padId: number, trackId: number) => void;
+  mixerTracks?: Array<{id: number; name: string; color: string}>;
 }
 
 // Array von möglichen Pad-Farben
@@ -47,7 +53,10 @@ export const DrumSynthBase: React.FC<DrumSynthProps> = ({
   className = '',
   selectedPad = -1,
   onSelectPad,
-  onParamChange
+  onParamChange,
+  // Neue Props für Mixer-Integration
+  onAssignToMixerTrack,
+  mixerTracks = []
 }) => {
   // Standard Paramater für unausgewählten Pad
   const defaultParams = {
@@ -74,9 +83,46 @@ export const DrumSynthBase: React.FC<DrumSynthProps> = ({
 
   // Generiere eine konsistente Pad-Farbe für jedes Pad basierend auf dessen ID
   const getPadColor = (padId: number) => {
+    // Wenn dieser Pad einem Mixer-Track zugeordnet ist, verwende dessen Farbe
+    const pad = pads.find(p => p.id === padId);
+    if (pad && pad.mixerTrackId !== undefined && mixerTracks.length > 0) {
+      const mixerTrack = mixerTracks.find(track => track.id === pad.mixerTrackId);
+      if (mixerTrack) {
+        // Konvertiere den Farbnamen in einen Hex-Code für die Anzeige
+        const trackColorMap: Record<string, {base: string, light: string, highlight: string}> = {
+          'purple': { base: '#9333ea', light: '#d8b4fe', highlight: '#e9d5ff' },
+          'blue': { base: '#2563eb', light: '#93c5fd', highlight: '#bfdbfe' },
+          'green': { base: '#16a34a', light: '#86efac', highlight: '#bbf7d0' },
+          'yellow': { base: '#ca8a04', light: '#fcd34d', highlight: '#fef08a' },
+          'red': { base: '#dc2626', light: '#fca5a5', highlight: '#fee2e2' },
+          'orange': { base: '#ea580c', light: '#fdba74', highlight: '#fed7aa' },
+          'indigo': { base: '#4f46e5', light: '#a5b4fc', highlight: '#c7d2fe' },
+          'pink': { base: '#be185d', light: '#f9a8d4', highlight: '#fbcfe8' },
+        };
+        return trackColorMap[mixerTrack.color] || padColors[padId % padColors.length];
+      }
+    }
+    
     // Benutze den Pad-ID als Seed für die Farbauswahl
     const colorIndex = padId % padColors.length;
     return padColors[colorIndex];
+  };
+
+  // Hilfsfunktion zum Anzeigen der Mixer-Track-Zuordnung
+  const getMixerTrackName = (padId: number) => {
+    const pad = pads.find(p => p.id === padId);
+    if (pad && pad.mixerTrackId !== undefined && mixerTracks.length > 0) {
+      const mixerTrack = mixerTracks.find(track => track.id === pad.mixerTrackId);
+      return mixerTrack ? mixerTrack.name : 'Not Assigned';
+    }
+    return 'Not Assigned';
+  };
+
+  // Hilfsfunktion zum Zuweisen eines Pads zu einem Mixer-Track
+  const handleAssignToMixerTrack = (padId: number, trackId: number) => {
+    if (onAssignToMixerTrack) {
+      onAssignToMixerTrack(padId, trackId);
+    }
   };
 
   return (
@@ -84,8 +130,10 @@ export const DrumSynthBase: React.FC<DrumSynthProps> = ({
       {/* Left side: Square pads grid with random colors */}
       <div className="grid grid-cols-4 gap-3 w-1/2">
         {pads.map((pad) => {
-          // Wähle eine Farbe basierend auf der Pad-ID
+          // Wähle eine Farbe basierend auf der Pad-ID oder Mixer-Track-Zuordnung
           const padColor = getPadColor(pad.id);
+          // Holen des Mixer-Track-Namens, falls eine Zuordnung existiert
+          const trackName = getMixerTrackName(pad.id);
           
           return (
             <div
@@ -168,6 +216,15 @@ export const DrumSynthBase: React.FC<DrumSynthProps> = ({
                       textShadow: pad.id === selectedPad ? `0 0 5px ${padColor.light}` : pad.active ? `0 0 3px ${padColor.light}` : 'none'
                     }}>{pad.tuning}</span>
                   </div>
+                </div>
+                
+                {/* Mixer Track Zuordnung */}
+                <div className="absolute bottom-2 left-0 right-0 text-center">
+                  <span className="text-[8px] bg-black/30 rounded px-1 py-0.5" style={{
+                    color: pad.mixerTrackId !== undefined ? padColor.light : '#71717a',
+                  }}>
+                    {trackName}
+                  </span>
                 </div>
               </div>
               
@@ -292,6 +349,49 @@ export const DrumSynthBase: React.FC<DrumSynthProps> = ({
                     <span className="w-10 text-right text-xs text-white/80">
                       {selectedPadData.tone || defaultParams.tone}
                     </span>
+                  </div>
+                </div>
+
+                {/* Neue Mixer-Track-Zuweisung */}
+                <div className="mt-6 bg-black/20 rounded-md p-3">
+                  <div className="text-sm text-white/80 mb-2 font-medium">Mixer Track Routing</div>
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    {mixerTracks.length > 0 ? (
+                      mixerTracks.map((track) => (
+                        <button
+                          key={track.id}
+                          className={`text-xs py-1 px-2 rounded-sm transition-colors ${
+                            selectedPadData.mixerTrackId === track.id
+                              ? 'bg-white/20 text-white'
+                              : 'bg-black/20 text-white/60 hover:bg-black/30'
+                          }`}
+                          onClick={() => handleAssignToMixerTrack(selectedPad, track.id)}
+                          style={{
+                            borderLeft: `2px solid ${
+                              track.color === 'purple' ? '#9333ea' :
+                              track.color === 'blue' ? '#2563eb' :
+                              track.color === 'green' ? '#16a34a' :
+                              track.color === 'yellow' ? '#ca8a04' :
+                              track.color === 'red' ? '#dc2626' :
+                              track.color === 'orange' ? '#ea580c' :
+                              track.color === 'indigo' ? '#4f46e5' :
+                              track.color === 'pink' ? '#be185d' :
+                              '#9333ea'
+                            }`
+                          }}
+                        >
+                          <div className="flex items-center">
+                            <span className="mr-1">
+                              {selectedPadData.mixerTrackId === track.id ? '✓' : ''}
+                            </span>
+                            {track.name}
+                          </div>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="col-span-2 text-xs text-white/60">No mixer tracks available</div>
+                    )}
                   </div>
                 </div>
 
