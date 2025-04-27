@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import Modal from '@/components/ui/modal';
 import RythmotronComponentsGuide from './RythmotronComponentsGuide';
 import withErrorBoundary from './ui/withErrorBoundary';
+import AudioMIDITestButton from './AudioMIDITestButton';
 
 interface HeaderProps {
   className?: string;
@@ -46,6 +47,14 @@ export const HeaderBase: React.FC<HeaderProps> = ({ className = '' }) => {
           </a>
         </nav>
         <div className="flex items-center space-x-4">
+          {/* Audio/MIDI Test Button */}
+          <AudioMIDITestButton
+            buttonVariant="outline"
+            buttonSize="sm"
+            buttonText="Audio & MIDI"
+            className="border-purple-600 text-purple-300 hover:bg-purple-900/30"
+          />
+          
           {/* Guide-Button für mobile Ansicht - in Orange mit schwarzer Schrift und 3D-Effekt */}
           <Button
             variant="3d"

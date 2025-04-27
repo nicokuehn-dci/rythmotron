@@ -217,4 +217,6 @@ const Slider: React.FC<SliderProps> = ({
   );
 };
 
+// Exportiere als benannte und Default-Export für Kompatibilität mit verschiedenen Import-Stilen
+export { Slider };
 export default Slider;

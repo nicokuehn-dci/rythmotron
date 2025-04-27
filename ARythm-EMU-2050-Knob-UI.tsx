@@ -33,8 +33,9 @@ import TestimonialCard from './src/components/TestimonialCard';
 import HeroSection from './src/components/HeroSection';
 import CallToActionSection from './src/components/CallToActionSection';
 import SynthPadGrid from './src/components/SynthPadGrid';
-import MixerPanel from './src/components/MixerPanel'; // Importieren der MixerPanel-Komponente anstelle von DrumSynthPanel
-
+import MixerPanel from './src/components/MixerPanel'; 
+import DrumSynthPanel from './src/components/DrumSynthPanel'; // Import der DrumSynthPanel-Komponente
+import DrumSynth from './src/components/DrumSynth'; // Import der DrumSynth-Komponente
 
 // --- Interface für den internen State des ChannelStrips ---
 interface ChannelState {
@@ -386,7 +387,7 @@ const [decay, setDecay] = useState(50);
 const [sustain, setSustain] = useState(70);
 const [release, setRelease] = useState(45);
 const [activeSequence, setActiveSequence] = useState(Array(16).fill(false));
-const [activeTab, setActiveTab] = useState("synth");
+const [activeTab, setActiveTab] = useState("drumsynth");
 const [tempo, setTempo] = useState(120); // Hinzugefügt: Fehlender State für tempo
 
 const tracks = [
@@ -643,160 +644,56 @@ return (
       </p>
     </div>
 
-    <Tabs defaultValue="synth" className="w-full" onValueChange={setActiveTab}>
-      <TabsList className="grid grid-cols-4 mb-8">
-        <TabsTrigger value="synth" className="!rounded-button whitespace-nowrap">Synthesizer</TabsTrigger>
+    <Tabs defaultValue="drumsynth" className="w-full" onValueChange={setActiveTab}>
+      <TabsList className="grid grid-cols-3 mb-8">
+        <TabsTrigger value="drumsynth" className="!rounded-button whitespace-nowrap">Drum Synth</TabsTrigger>
         <TabsTrigger value="sequencer" className="!rounded-button whitespace-nowrap">Sequencer</TabsTrigger>
         <TabsTrigger value="effects" className="!rounded-button whitespace-nowrap">Effects</TabsTrigger>
-        <TabsTrigger value="drumsynth" className="!rounded-button whitespace-nowrap">Mixer</TabsTrigger>
       </TabsList>
 
-      <TabsContent value="synth" className="mt-0">
-        <div className="grid grid-cols-1 gap-8">
-          <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800">
-            <TransportControls
-              isPlaying={isPlaying}
-              onPlayPause={handlePlayPause}
-              showRecord={true}
-              volume={volume}
-              onVolumeChange={setVolume}
-              className="mb-6"
+      <TabsContent value="drumsynth" className="mt-0">
+        <div className="grid grid-cols-1 gap-6">
+          {/* DrumSynth Panel Component */}
+          <DrumSynthPanel 
+            selectedTrack={selectedTrack}
+            trackData={tracks[selectedTrack]}
+            onParameterChange={(param, value) => {
+              // Handle parameter changes here
+              console.log(`Parameter ${param} changed to ${value} for track ${selectedTrack}`);
+            }}
+            currentStep={isPlaying ? 0 : -1} // Just for visualization, would be dynamic in real app
+          />
+
+          {/* DrumSynth component with square pads in a grid layout */}
+          <div className="bg-zinc-800/30 rounded-xl p-6 border border-zinc-700/50">
+            <h3 className="text-lg font-medium mb-4">Drum Pad Matrix</h3>
+            <DrumSynth 
+              pads={padData.map((pad, index) => ({
+                ...pad,
+                // Use actual track types for more variety
+                type: tracks[index % tracks.length].name
+              }))}
+              onTogglePad={(id) => toggleSequenceStep(id)} 
+              currentStep={isPlaying ? 0 : -1}
+              selectedPad={selectedTrack}
+              onSelectPad={(id) => setSelectedTrack(id)}
+              onParamChange={(padId, param, value) => {
+                console.log(`Pad ${padId} parameter ${param} changed to ${value}`);
+              }}
+              className="mb-4"
             />
-
-            <div className="grid grid-cols-1 gap-8">
-              <SynthPadGrid 
-                pads={padData} 
-                onTogglePad={(id) => toggleSequenceStep(id)} 
-                currentStep={0}
-              />
-
-              <div className="mt-8 bg-zinc-800/30 rounded-xl p-6 border border-zinc-700">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-lg font-medium">Step Sequencer</h3>
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-2">
-                      <LED active={true} color="green" />
-                      <span className="text-sm text-zinc-400">Pattern A1</span>
-                    </div>
-                    <Button variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">
-                      <i className="fa-solid fa-copy mr-2"></i>
-                      Clone
-                    </Button>
-                  </div>
-                </div>
-
-                <StepSequencer
-                  steps={activeSequence}
-                  onToggleStep={toggleSequenceStep}
-                  currentStep={0}
-                />
+            
+            <div className="flex justify-between mt-6 items-center">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                <span className="text-sm text-zinc-400">Active Step</span>
               </div>
-
-              <div className="flex justify-between items-center">
-                <div className="flex space-x-2 items-center">
-                  <LED active={true} color="green" />
-                  <span className="text-xs text-zinc-400">OSC 1</span>
-                </div>
-                <div className="flex space-x-4">
-                  <Button variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">Sine</Button>
-                  <Button variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">Saw</Button>
-                  <Button variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">Square</Button>
-                </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+                <span className="text-sm text-zinc-400">Selected Pad</span>
               </div>
-            </div>
-
-            <div>
-              <div className="mb-4">
-                <h3 className="text-sm text-zinc-400 mb-2">Spectrum</h3>
-                <WaveformDisplay type="spectrum" height={128} />
-              </div>
-              <div className="flex justify-between items-center">
-                <div className="flex space-x-2 items-center">
-                  <LED active={true} color="purple" />
-                  <span className="text-xs text-zinc-400">Analyzer</span>
-                </div>
-                <div className="flex space-x-2 items-center">
-                  <span className="text-xs text-zinc-400">Resolution</span>
-                  <select className="bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs rounded-md !rounded-button whitespace-nowrap">
-                    <option>1024</option>
-                    <option>2048</option>
-                    <option>4096</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-8 mt-8">
-            <div>
-              <h3 className="text-sm text-zinc-400 mb-4">Track Parameters</h3>
-              <div className="grid grid-cols-4 gap-4">
-                <div>
-                  <Knob
-                    value={attack}
-                    onChange={setAttack}
-                    label="Attack"
-                    size="sm"
-                    color="#4ade80"
-                  />
-                </div>
-                <div>
-                  <Knob
-                    value={decay}
-                    onChange={setDecay}
-                    label="Decay"
-                    size="sm"
-                    color="#4ade80"
-                  />
-                </div>
-                <div>
-                  <Knob
-                    value={sustain}
-                    onChange={setSustain}
-                    label="Sustain"
-                    size="sm"
-                    color="#4ade80"
-                  />
-                </div>
-                <div>
-                  <Knob
-                    value={release}
-                    onChange={setRelease}
-                    label="Release"
-                    size="sm"
-                    color="#4ade80"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800">
-            <h3 className="text-lg font-medium mb-4">Filter</h3>
-            <div className="space-y-6">
-              <div>
-                <Knob
-                  value={filter}
-                  onChange={setFilter}
-                  label="Cutoff"
-                  color="#a855f7"
-                />
-              </div>
-              <div>
-                <Knob
-                  value={resonance}
-                  onChange={setResonance}
-                  label="Resonance"
-                  color="#a855f7"
-                />
-              </div>
-              <div className="pt-4">
-                <h4 className="text-sm text-zinc-400 mb-2">Filter Type</h4>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button variant="outline" size="sm" className="border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white !rounded-button whitespace-nowrap">Low Pass</Button>
-                  <Button variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">High Pass</Button>
-                  <Button variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">Band Pass</Button>
-                  <Button variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white !rounded-button whitespace-nowrap">Notch</Button>
-                </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-zinc-400">Rechtsklick: Parameter-Bearbeitung</span>
               </div>
             </div>
           </div>
@@ -1128,13 +1025,6 @@ return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Effects Panel Component */}
           <EffectPanel />
-        </div>
-      </TabsContent>
-
-      <TabsContent value="drumsynth" className="mt-0">
-        <div className="grid grid-cols-1 gap-6">
-          {/* Mixer Panel Component */}
-          <MixerPanel />
         </div>
       </TabsContent>
     </Tabs>

@@ -1,206 +1,269 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import LED from './ui/led';
-import withErrorBoundary from './ui/withErrorBoundary';
-
-interface Track {
-  id: number;
-  name: string;
-  color: string;
-  pattern: boolean[];
-}
+import { Button } from './ui/button';
+import sequencer, { SequencerPattern, SequencerTrack } from '../lib/services/Sequencer';
 
 interface SequencerGridProps {
-  tracks: Track[];
-  steps: number;
-  currentStep?: number;
-  onToggleStep?: (trackId: number, step: number) => void;
   className?: string;
+  patternId?: string;
+  onStepChange?: (trackId: number, stepIndex: number, active: boolean) => void;
 }
 
-const SequencerGridBase: React.FC<SequencerGridProps> = ({
-  tracks = [],
-  steps = 16,
-  currentStep = -1,
-  onToggleStep = () => {},
-  className = ''
+const SequencerGrid: React.FC<SequencerGridProps> = ({
+  className = '',
+  patternId = 'default',
+  onStepChange,
 }) => {
-  // State to track cells that are animating
-  const [animatingCells, setAnimatingCells] = useState<{[key: string]: boolean}>({});
+  const [pattern, setPattern] = useState<SequencerPattern | null>(null);
+  const [currentStep, setCurrentStep] = useState<number>(-1);
+  const [selectedTrack, setSelectedTrack] = useState<number>(0);
+
+  // Load pattern data on component mount or when patternId changes
+  useEffect(() => {
+    const loadedPattern = sequencer.getPattern(patternId);
+    if (loadedPattern) {
+      setPattern(loadedPattern);
+    } else {
+      // Create a default pattern if one with the specified ID doesn't exist
+      sequencer.createPattern(patternId, 'New Pattern');
+      setPattern(sequencer.getPattern(patternId));
+    }
+    
+    // Set current pattern as active in sequencer
+    sequencer.setCurrentPattern(patternId);
+  }, [patternId]);
+
+  // Set up event listeners for the sequencer
+  useEffect(() => {
+    // Listen for step changes
+    const handleStepChange = (step: number) => {
+      setCurrentStep(step);
+    };
+    
+    sequencer.on('step', handleStepChange);
+
+    // Clean up listeners when component unmounts
+    return () => {
+      sequencer.off('step', handleStepChange);
+    };
+  }, []);
+
+  // Handle step toggle
+  const handleStepToggle = (trackId: number, stepIndex: number) => {
+    if (!pattern) return;
+    
+    // Find track in pattern
+    const track = pattern.tracks.find(t => t.id === trackId);
+    if (!track) return;
+    
+    // Get current state
+    const currentActive = track.steps[stepIndex].active;
+    
+    // Toggle step state
+    sequencer.setStep(trackId, stepIndex, !currentActive);
+    
+    // Update local state to reflect change
+    setPattern(sequencer.getPattern(patternId) || null);
+    
+    // Call external handler if provided
+    if (onStepChange) {
+      onStepChange(trackId, stepIndex, !currentActive);
+    }
+  };
   
-  // Handle step toggle with animation
-  const handleToggleStep = (trackId: number, stepIndex: number) => {
-    onToggleStep(trackId, stepIndex);
-    
-    // Create a unique key for this cell
-    const cellKey = `${trackId}-${stepIndex}`;
-    
-    // Set this cell as animating
-    setAnimatingCells(prev => ({ ...prev, [cellKey]: true }));
-    
-    // Remove animating state after animation completes
-    setTimeout(() => {
-      setAnimatingCells(prev => {
-        const updated = { ...prev };
-        delete updated[cellKey];
-        return updated;
-      });
-    }, 500); // Animation duration
+  // Handle track mute toggle
+  const handleMuteToggle = (trackId: number) => {
+    sequencer.toggleMute(trackId);
+    setPattern(sequencer.getPattern(patternId) || null);
+  };
+  
+  // Handle track solo toggle
+  const handleSoloToggle = (trackId: number) => {
+    sequencer.toggleSolo(trackId);
+    setPattern(sequencer.getPattern(patternId) || null);
   };
 
-  return (
-    <div 
-      className={`${className} bg-zinc-900/40 rounded-lg p-4 border border-zinc-800/50 relative`} 
-      style={{
-        boxShadow: 'inset 2px 2px 6px rgba(0, 0, 0, 0.3), inset -1px -1px 4px rgba(255, 255, 255, 0.05)',
-        overflow: 'hidden'
-      }}
-    >
-      <div className="overflow-x-auto">
-        <div className="grid" style={{ 
-          gridTemplateColumns: `minmax(80px, auto) repeat(${steps}, minmax(40px, 1fr))`
-        }}>
-          {/* Header row with step numbers */}
-          <div 
-            className="flex items-center justify-center font-medium h-8 text-zinc-400 text-sm"
-          >
-            Tracks
-          </div>
-          
-          {Array.from({ length: steps }).map((_, stepIndex) => (
-            <div 
-              key={`header-${stepIndex}`} 
-              className={`flex items-center justify-center h-8 text-xs font-medium ${currentStep === stepIndex ? 'text-green-400' : 'text-zinc-500'}`}
-              style={{
-                textShadow: currentStep === stepIndex ? '0 0 5px rgba(74, 222, 128, 0.5)' : 'none',
-                transition: 'transform 0.3s ease'
-              }}
-            >
-              {stepIndex + 1}
-            </div>
-          ))}
-          
-          {/* Track rows */}
-          {tracks.map((track) => (
-            <React.Fragment key={`track-${track.id}`}>
-              {/* Track name */}
-              <div 
-                className="flex items-center px-3 h-10 font-medium rounded-l-md"
-                style={{ 
-                  background: 'linear-gradient(145deg, #292929, #222222)', 
-                  boxShadow: '2px 2px 4px rgba(0, 0, 0, 0.3), -1px -1px 2px rgba(60, 60, 60, 0.1)',
-                  borderLeft: `2px solid ${track.color}`
-                }}
-              >
-                <span className="text-sm" style={{
-                  color: track.color,
-                  textShadow: `0 0 3px ${track.color}40`
-                }}>
-                  {track.name}
-                </span>
-              </div>
-              
-              {/* Step cells */}
-              {Array.from({ length: steps }).map((_, stepIndex) => {
-                const isActive = track.pattern[stepIndex] || false;
-                const cellKey = `${track.id}-${stepIndex}`;
-                const isAnimating = animatingCells[cellKey];
-                const isCurrentStep = currentStep === stepIndex;
-                
-                return (
-                  <div 
-                    key={cellKey} 
-                    className="p-1 relative group"
-                  >
-                    <div
-                      className={`
-                        h-8 rounded-md cursor-pointer relative
-                        ${isCurrentStep ? 'ring-1 ring-white/30' : ''}
-                        ${isAnimating ? 'animate-step-toggle' : 'transition-all duration-150'}
-                      `}
-                      style={{
-                        background: isActive 
-                          ? `linear-gradient(145deg, #252525, #1e1e1e)` 
-                          : 'linear-gradient(145deg, #2a2a2a, #222222)',
-                        boxShadow: isActive
-                          ? `inset 2px 2px 4px rgba(0, 0, 0, 0.5), 
-                             inset -1px -1px 2px rgba(60, 60, 60, 0.2),
-                             0 0 6px ${track.color}40`
-                          : `1px 1px 3px rgba(0, 0, 0, 0.3), 
-                             -1px -1px 2px rgba(60, 60, 60, 0.1)`,
-                        border: isActive 
-                          ? `1px solid ${track.color}` 
-                          : '1px solid rgba(60, 60, 60, 0.3)'
-                      }}
-                      onClick={() => handleToggleStep(track.id, stepIndex)}
-                    >
-                      {/* LED indicator */}
-                      <div className="h-full w-full flex items-center justify-center">
-                        <LED active={isActive} color={track.color} size="xs" />
-                      </div>
-                      
-                      {/* Current step indicator */}
-                      {isCurrentStep && (
-                        <div 
-                          className="absolute inset-0 rounded-md animate-pulse" 
-                          style={{
-                            boxShadow: `0 0 5px ${track.color}, inset 0 0 5px ${track.color}`, 
-                            opacity: 0.3
-                          }} 
-                        />
-                      )}
-                      
-                      {/* Inner shadows and highlights */}
-                      <div className="absolute inset-0 pointer-events-none rounded-md overflow-hidden">
-                        {/* Top shadow */}
-                        <div className="absolute inset-x-0 top-0 h-1/4 bg-black/20" style={{
-                          opacity: isActive ? 0.25 : 0.1
-                        }}/>
-                        
-                        {/* Bottom highlight */}
-                        <div className="absolute inset-x-0 bottom-0 h-1/5 bg-white/5" style={{
-                          opacity: isActive ? 0.05 : 0.1
-                        }}/>
-                        
-                        {/* Active inner glow */}
-                        {isActive && (
-                          <div className="absolute inset-0" style={{
-                            background: `radial-gradient(circle at center, ${track.color}20 0%, transparent 70%)`
-                          }} />
-                        )}
-                      </div>
-                    </div>
-                    
-                    {/* Bottom highlight on hover */}
-                    <div 
-                      className="absolute inset-x-0 bottom-0 h-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 mx-1" 
-                      style={{
-                        background: `linear-gradient(90deg, transparent, ${track.color}, transparent)`,
-                        boxShadow: `0 0 4px ${track.color}`,
-                        transform: 'translateY(-1px)'
-                      }} 
-                    />
-                  </div>
-                );
-              })}
-            </React.Fragment>
-          ))}
-        </div>
-      </div>
+  // Helper function to get color for track
+  const getTrackColor = (trackName: string): string => {
+    const colors: Record<string, string> = {
+      'Kick': '#9333ea', // purple
+      'Snare': '#6366f1', // indigo
+      'HiHat': '#10b981', // emerald
+      'Clap': '#f97316', // orange
+      'Tom1': '#f43f5e', // rose
+      'Tom2': '#ec4899', // pink
+      'Crash': '#0ea5e9', // blue
+      'Perc': '#eab308', // yellow
+    };
+    
+    // Return color if found, otherwise default to gray
+    return colors[trackName] || '#94a3b8';
+  };
+
+  // Handle track selection
+  const handleTrackSelect = (trackId: number) => {
+    setSelectedTrack(trackId);
+  };
+
+  // Generate demo pattern with common drum rhythms
+  const handleGenerateDemo = () => {
+    if (!pattern) return;
+    
+    // Basic 4/4 pattern
+    pattern.tracks.forEach(track => {
+      // Clear existing steps
+      track.steps.forEach(step => step.active = false);
       
-      {/* Reflective Floor (kept from original design) */}
-      <div 
-        className="absolute left-0 right-0 bottom-0 opacity-10 pointer-events-none"
-        style={{
-          height: '30px',
-          background: 'linear-gradient(to bottom, rgba(180,180,180,0.3), transparent)',
-          transform: 'rotateX(60deg) translateY(15px)',
-          transformOrigin: 'bottom'
-        }}
-      />
+      // Set default patterns based on track name
+      switch(track.name) {
+        case 'Kick':
+          // Kick on beats 1 and 3
+          track.steps[0].active = true;
+          track.steps[8].active = true;
+          break;
+        case 'Snare':
+          // Snare on beats 2 and 4
+          track.steps[4].active = true;
+          track.steps[12].active = true;
+          break;
+        case 'HiHat':
+          // HiHat on every 8th note
+          for (let i = 0; i < 16; i += 2) {
+            track.steps[i].active = true;
+          }
+          break;
+        case 'Clap':
+          // Clap reinforcing snare
+          track.steps[4].active = true;
+          track.steps[12].active = true;
+          break;
+        case 'Tom1':
+          // Fill at end of bar
+          track.steps[13].active = true;
+          track.steps[14].active = true;
+          break;
+        case 'Crash':
+          // Crash on beat 1
+          track.steps[0].active = true;
+          break;
+      }
+    });
+    
+    // Update pattern in sequencer and component state
+    setPattern({...pattern});
+  };
+
+  // Clear all steps
+  const handleClearAll = () => {
+    if (!pattern) return;
+    
+    // Clear all steps
+    pattern.tracks.forEach(track => {
+      track.steps.forEach(step => step.active = false);
+    });
+    
+    // Update pattern in sequencer and component state
+    setPattern({...pattern});
+  };
+
+  if (!pattern) {
+    return <div className="text-center py-4 text-zinc-400">Loading pattern...</div>;
+  }
+
+  return (
+    <div className={`bg-zinc-900 border border-zinc-800 rounded-xl ${className}`}>
+      <div className="p-4 flex flex-col gap-4">
+        <div className="flex justify-between items-center">
+          <div className="text-lg font-medium text-zinc-300">{pattern.name}</div>
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleGenerateDemo}
+              variant="outline"
+              size="sm"
+              className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+            >
+              Demo Pattern
+            </Button>
+            <Button
+              onClick={handleClearAll}
+              variant="outline"
+              size="sm"
+              className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+            >
+              Clear All
+            </Button>
+          </div>
+        </div>
+
+        {/* Track headers row */}
+        <div className="grid grid-cols-[200px_1fr] gap-2">
+          <div className="text-sm text-zinc-500 font-medium">Track</div>
+          <div className="grid grid-cols-16 gap-1">
+            {Array.from({ length: 16 }, (_, i) => (
+              <div key={i} className="text-xs text-center text-zinc-500">{i + 1}</div>
+            ))}
+          </div>
+        </div>
+
+        {/* Tracks and steps */}
+        {pattern.tracks.map((track) => (
+          <div 
+            key={track.id}
+            className={`grid grid-cols-[200px_1fr] gap-2 items-center ${
+              selectedTrack === track.id ? 'bg-zinc-800/50 rounded-md' : ''
+            }`}
+            onClick={() => handleTrackSelect(track.id)}
+          >
+            {/* Track info */}
+            <div className="flex items-center gap-2 p-2">
+              <div 
+                className="w-3 h-3 rounded-full" 
+                style={{ backgroundColor: getTrackColor(track.name) }}
+              ></div>
+              <div className="text-sm text-zinc-300 font-medium flex-grow">{track.name}</div>
+              <div className="flex gap-1">
+                <button
+                  className={`w-6 h-6 flex items-center justify-center rounded ${
+                    track.mute ? 'bg-yellow-600 text-white' : 'bg-zinc-700 text-zinc-400'
+                  } text-xs`}
+                  onClick={(e) => { e.stopPropagation(); handleMuteToggle(track.id); }}
+                >
+                  M
+                </button>
+                <button
+                  className={`w-6 h-6 flex items-center justify-center rounded ${
+                    track.solo ? 'bg-green-600 text-white' : 'bg-zinc-700 text-zinc-400'
+                  } text-xs`}
+                  onClick={(e) => { e.stopPropagation(); handleSoloToggle(track.id); }}
+                >
+                  S
+                </button>
+              </div>
+            </div>
+
+            {/* Step pads */}
+            <div className="grid grid-cols-16 gap-1">
+              {track.steps.map((step, stepIndex) => (
+                <div
+                  key={stepIndex}
+                  className={`h-8 rounded-sm cursor-pointer flex items-center justify-center ${
+                    step.active 
+                      ? `bg-opacity-30 bg-${getTrackColor(track.name)}-500 border border-${getTrackColor(track.name)}-500` 
+                      : 'bg-zinc-800 border border-zinc-700 hover:bg-zinc-700'
+                  } ${currentStep === stepIndex ? 'ring-1 ring-white ring-opacity-50' : ''}`}
+                  onClick={() => handleStepToggle(track.id, stepIndex)}
+                >
+                  {step.active && (
+                    <div className="w-2 h-2 rounded-full bg-white bg-opacity-70"></div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
 
-// Add error handling
-const SequencerGrid = withErrorBoundary(SequencerGridBase, 'SequencerGrid');
 export default SequencerGrid;
