@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import DrumSynthPanel from './DrumSynthPanel';
 import TransportControls from './TransportControls';
-import SequencerGrid from './SequencerGrid';
+import SequencerTab from './SequencerTab'; // Importiere die neue SequencerTab-Komponente
 import audioEngine from '../lib/services/AudioEngine';
 import midiService from '../lib/services/MIDIService';
 import sequencer from '../lib/services/Sequencer';
@@ -67,12 +67,18 @@ const AudioMIDITestPage: React.FC<AudioMIDITestPageProps> = ({
       if (mounted) setCurrentStep(step);
     };
     
+    const handlePlayStateChange = (playing: boolean) => {
+      if (mounted) setIsPlaying(playing);
+    };
+    
     sequencer.on('step', handleStepChange);
+    sequencer.on('playStateChange', handlePlayStateChange);
     
     // Clean up on unmount
     return () => {
       mounted = false;
       sequencer.off('step', handleStepChange);
+      sequencer.off('playStateChange', handlePlayStateChange);
       
       // If in modal mode, don't dispose audio engine on unmount
       // since it might be used elsewhere in the app
@@ -185,6 +191,23 @@ const AudioMIDITestPage: React.FC<AudioMIDITestPageProps> = ({
     <div className={`bg-zinc-900 text-white ${isModal ? 'min-h-[80vh]' : 'min-h-screen'} p-4`}>
       <h1 className="text-3xl font-bold mb-4">Rythmotron Audio & MIDI Test</h1>
       
+      {/* Sequencer Tab - moved to the beginning of the audio routing chain */}
+      <SequencerTab className="mb-6" />
+      
+      {/* Transport Controls - noch in der Seite für globale Kontrolle */}
+      <TransportControls
+        isPlaying={isPlaying}
+        onPlay={handlePlayPause}
+        tempo={tempo}
+        onTempoChange={handleTempoChange}
+        volume={volume}
+        onVolumeChange={handleVolumeChange}
+        showRecord={true}
+        showResetButton={true}
+        showSaveButton={false}
+        className="mb-6"
+      />
+      
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
         {/* Status Panel */}
         <div className="lg:col-span-4 bg-zinc-800/50 rounded-xl border border-zinc-700/50 p-4">
@@ -256,26 +279,6 @@ const AudioMIDITestPage: React.FC<AudioMIDITestPageProps> = ({
           />
         </div>
       </div>
-      
-      {/* Transport Controls */}
-      <TransportControls
-        isPlaying={isPlaying}
-        onPlayPause={handlePlayPause}
-        tempo={tempo}
-        onTempoChange={handleTempoChange}
-        volume={volume}
-        onVolumeChange={handleVolumeChange}
-        showRecord={true}
-        showResetButton={true}
-        showSaveButton={true}
-        className="mb-6"
-      />
-      
-      {/* Sequencer Grid */}
-      <SequencerGrid 
-        className="mb-6"
-        patternId="default"
-      />
       
       {/* Testing Controls */}
       <div className="p-4 bg-zinc-800/50 rounded-xl border border-zinc-700/50 mb-6">

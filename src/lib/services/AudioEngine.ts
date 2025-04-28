@@ -26,6 +26,13 @@ interface DrumSynthParams {
   oscillatorType?: OscillatorType;
 }
 
+interface AudioRouting {
+  sequencerOutput: GainNode | null;
+  channelStrips: Map<number, GainNode>;
+  master: GainNode | null;
+  compressor: DynamicsCompressorNode | null;
+}
+
 class AudioEngine {
   private context: AudioContext | null = null;
   private master: GainNode | null = null;
@@ -34,6 +41,14 @@ class AudioEngine {
   private compressor: DynamicsCompressorNode | null = null;
   private _isInitialized: boolean = false;
   public supportsSynthesis: boolean = false;
+  
+  // Audio routing chain - ensures sequencer is first in chain
+  private routing: AudioRouting = {
+    sequencerOutput: null,
+    channelStrips: new Map(),
+    master: null,
+    compressor: null
+  };
 
   /**
    * Initialize the audio engine
@@ -50,24 +65,32 @@ class AudioEngine {
         typeof this.context.createOscillator === 'function' &&
         typeof this.context.createBiquadFilter === 'function';
       
+      // Create sequencer output node - THIS IS THE FIRST NODE IN THE CHAIN
+      this.routing.sequencerOutput = this.context.createGain();
+      this.routing.sequencerOutput.gain.value = 1.0; // Full volume from sequencer
+      
       // Create master gain
       this.master = this.context.createGain();
+      this.routing.master = this.master;
       this.master.gain.value = 0.8; // Default volume
       
       // Add a compressor for overall dynamics control
       this.compressor = this.context.createDynamicsCompressor();
+      this.routing.compressor = this.compressor;
       this.compressor.threshold.value = -24;
       this.compressor.knee.value = 30;
       this.compressor.ratio.value = 12;
       this.compressor.attack.value = 0.003;
       this.compressor.release.value = 0.25;
       
-      // Connect nodes
+      // Connect nodes in proper order:
+      // sequencerOutput -> master -> compressor -> destination
+      this.routing.sequencerOutput.connect(this.master);
       this.master.connect(this.compressor);
       this.compressor.connect(this.context.destination);
       
       this._isInitialized = true;
-      console.log('AudioEngine initialized:', this.context);
+      console.log('AudioEngine initialized with sequencer as first node in chain:', this.context);
       
       // Preload samples
       await this.preloadSamples();
@@ -84,6 +107,13 @@ class AudioEngine {
    */
   getCurrentTime(): number {
     return this.context?.currentTime || 0;
+  }
+
+  /**
+   * Get the sequencer output node - for connecting sequencer to audio chain
+   */
+  getSequencerOutput(): GainNode | null {
+    return this.routing.sequencerOutput;
   }
 
   /**

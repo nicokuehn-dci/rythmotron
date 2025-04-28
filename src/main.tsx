@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-// Import die Hauptanwendung wieder
-import App from '../ARythm-EMU-2050-Knob-UI';
+// Import the main application with a more explicit path
+import App from '../ARythm-EMU-2050-Knob-UI.tsx';
 import './index.css';
 import ErrorBoundary, { RuntimeErrorHandler } from './components/ui/ErrorHandler';
 

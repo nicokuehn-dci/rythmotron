@@ -32,10 +32,10 @@ import TransportControls from './src/components/TransportControls';
 import TestimonialCard from './src/components/TestimonialCard';
 import HeroSection from './src/components/HeroSection';
 import CallToActionSection from './src/components/CallToActionSection';
-import SynthPadGrid from './src/components/SynthPadGrid';
-import MixerPanel from './src/components/MixerPanel'; 
+import MixerPanel from './src/components/MixerPanel';
 import DrumSynthPanel from './src/components/DrumSynthPanel'; // Import der DrumSynthPanel-Komponente
 import DrumSynth from './src/components/DrumSynth'; // Import der DrumSynth-Komponente
+import SequencerTab from './src/components/SequencerTab'; // Import der SequencerTab-Komponente
 
 // --- Interface für den internen State des ChannelStrips ---
 interface ChannelState {
@@ -588,12 +588,12 @@ useEffect(() => {
 
 // Erstellen von Pad-Daten für DrumSynth, bei direkter Zuordnung zu den entsprechenden Tracks
 const padData = Array.from({ length: 16 }).map((_, index) => ({
-  id: index,
-  active: activeSequence[index],
-  // Verwende den Track-Typ direkt vom zugehörigen Track
-  type: tracks[index % tracks.length].name,
-  velocity: 127,
-  tuning: 0,
+id: index,
+active: activeSequence[index],
+// Verwende den Track-Typ direkt vom zugehörigen Track
+type: tracks[index % tracks.length].name,
+velocity: 127,
+tuning: 0,
   // Direkte 1:1-Zuordnung: Pad-ID entspricht Track-ID (modulo Anzahl der Tracks)
   mixerTrackId: index % tracks.length
 }));
@@ -699,39 +699,41 @@ return (
                 // Use actual track types for more variety
                 type: tracks[index % tracks.length].name
               }))}
-              onTogglePad={(id) => toggleSequenceStep(id)} 
-              currentStep={isPlaying ? 0 : -1}
+                onTogglePad={(id) => toggleSequenceStep(id)} 
+                currentStep={isPlaying ? 0 : -1}
               selectedPad={selectedTrack}
               onSelectPad={(id) => setSelectedTrack(id)}
               onParamChange={(padId, param, value) => {
                 console.log(`Pad ${padId} parameter ${param} changed to ${value}`);
               }}
-              // Neue Props für Mixer-Track-Integration
+// Neue Props für Mixer-Track-Integration
               mixerTracks={tracks}
               onAssignToMixerTrack={assignPadToMixerTrack}
               className="mb-4"
             />
             
             <div className="flex justify-between mt-6 items-center">
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                <span className="text-sm text-zinc-400">Active Step</span>
-              </div>
-              <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                      <span className="text-sm text-zinc-400">Active Step</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
                 <div className="w-3 h-3 rounded-full bg-purple-500"></div>
                 <span className="text-sm text-zinc-400">Selected Pad</span>
-              </div>
-              <div className="flex items-center space-x-2">
+                  </div>
+<div className="flex items-center space-x-2">
                 <span className="text-sm text-zinc-400">Rechtsklick: Parameter-Bearbeitung</span>
-              </div>
-            </div>
+                </div>
+</div>
           </div>
         </div>
       </TabsContent>
 
       <TabsContent value="sequencer" className="mt-0">
         <div className="bg-zinc-900 rounded-xl p-6 border border-zinc-800">
-          {/* ... sequencer content ... */}
+          <SequencerTab 
+            className="w-full" 
+          />
         </div>
       </TabsContent>
 
@@ -767,7 +769,7 @@ return (
             {/* MixerPanel Komponente mit den Drum-Pad Tracks */}
             <MixerPanel 
               className="w-full"
-              tracks={tracks}
+tracks={tracks}
               assignedPads={padMixerAssignments}
               selectedTrack={selectedTrack}
               onSelectTrack={setSelectedTrack}
@@ -855,7 +857,7 @@ return (
                   </div>
                 ))}
               </div>
-            </div>
+              </div>
           </div>
         </div>
       </TabsContent>

@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 
 interface SliderProps {
-  value: number;
-  onChange: (value: number) => void;
+  value: number | number[];
+  onChange?: (value: number) => void;
+  onValueChange?: (value: number[]) => void;
   min?: number;
   max?: number;
   step?: number;
@@ -22,6 +23,7 @@ interface SliderProps {
 const Slider: React.FC<SliderProps> = ({
   value,
   onChange,
+  onValueChange,
   min = 0,
   max = 100,
   step = 1,
@@ -33,9 +35,7 @@ const Slider: React.FC<SliderProps> = ({
   formatValue,
   showValue = true,
   snapToGrid = true, // Default to false for backward compatibility
-  gridSize = 20
-
-  , // Default grid size of 5
+  gridSize = 20,
   showGridLines = true, // Show grid lines by default when snapToGrid is true
   gridLineColor = 'rgba(255, 255, 255, 0.15)' // Default grid line color
 }) => {
@@ -55,8 +55,15 @@ const Slider: React.FC<SliderProps> = ({
     lg: 'w-5 h-5',    
   };
   
+  // Handle both number and array values, with fallback to prevent undefined errors
+  const currentValue = value === undefined || value === null 
+    ? min 
+    : Array.isArray(value) 
+      ? value[0] ?? min 
+      : value;
+  
   // Calculate percentage for positioning
-  const percent = ((value - min) / (max - min)) * 100;
+  const percent = ((currentValue - min) / (max - min)) * 100;
   
   // Handle click and drag
   const handlePointerDown = (e: React.PointerEvent) => {
@@ -106,12 +113,19 @@ const Slider: React.FC<SliderProps> = ({
     
     // Ensure value is within bounds
     newValue = Math.max(min, Math.min(max, newValue));
-      
-    onChange(newValue);
+    
+    // Call appropriate onChange function
+    if (onChange) {
+      onChange(newValue);
+    }
+    
+    if (onValueChange) {
+      onValueChange([newValue]);
+    }
   };
   
   // Format display value
-  const displayValue = formatValue ? formatValue(value) : value.toString();
+  const displayValue = formatValue ? formatValue(currentValue) : currentValue.toString();
   
   // Calculate the number of grid lines to show
   const gridLines = snapToGrid || step > 0 ? Math.floor((max - min) / (snapToGrid ? gridSize : step)) + 1 : 0;

@@ -9,7 +9,7 @@ import midiService from '../lib/services/MIDIService';
 interface TransportControlsProps {
   className?: string;
   isPlaying?: boolean;
-  onPlayPause?: (isPlaying: boolean) => void;
+  onPlay?: (isPlaying: boolean) => void;
   showRecord?: boolean;
   tempo?: number;
   onTempoChange?: (tempo: number) => void;
@@ -23,7 +23,7 @@ interface TransportControlsProps {
 const TransportControls: React.FC<TransportControlsProps> = ({
   className = '',
   isPlaying: externalIsPlaying,
-  onPlayPause,
+  onPlay, // Renamed from onPlayPause for clarity
   showRecord = false,
   tempo: externalTempo = 120,
   onTempoChange,
@@ -34,7 +34,6 @@ const TransportControls: React.FC<TransportControlsProps> = ({
   showMIDISync = true,
 }) => {
   // Use local state that syncs with external props
-  // Korrigierte Zeile: Entfernung des Aufrufs von sequencer.getIsPlaying()
   const [isPlaying, setIsPlaying] = useState<boolean>(externalIsPlaying || false);
   const [tempo, setTempo] = useState<number>(externalTempo);
   const [volume, setVolume] = useState<number>(externalVolume);
@@ -52,17 +51,15 @@ const TransportControls: React.FC<TransportControlsProps> = ({
   useEffect(() => {
     if (externalTempo !== undefined) {
       setTempo(externalTempo);
-      // Wir überprüfen, ob sequencer definiert ist, bevor wir darauf zugreifen
-      if (sequencer && typeof sequencer.setBpm === 'function') {
-        sequencer.setBpm(externalTempo);
-      }
+      // Set tempo in sequencer
+      sequencer.setTempo(externalTempo);
     }
   }, [externalTempo]);
 
   useEffect(() => {
     if (externalVolume !== undefined) {
       setVolume(externalVolume);
-      // Wir überprüfen, ob audioEngine definiert ist, bevor wir darauf zugreifen
+      // Set volume in audio engine if available
       if (audioEngine && typeof audioEngine.setMasterVolume === 'function') {
         audioEngine.setMasterVolume(externalVolume);
       }
@@ -71,29 +68,26 @@ const TransportControls: React.FC<TransportControlsProps> = ({
 
   // Set up event listeners for the sequencer
   useEffect(() => {
-    // Wir überprüfen, ob sequencer definiert ist
-    if (!sequencer) return;
-
     // Listen for step changes
-    if (typeof sequencer.on === 'function') {
-      sequencer.on('step', (step) => {
-        setCurrentStep(step);
-      });
+    const handleStepChange = (step: number) => {
+      setCurrentStep(step);
+    };
 
-      // Listen for play state changes
-      sequencer.on('playStateChange', (playing) => {
-        setIsPlaying(playing);
-        if (onPlayPause) onPlayPause(playing);
-      });
-
-      // Clean up listeners when component unmounts
-      return () => {
-        if (sequencer && typeof sequencer.clearListeners === 'function') {
-          sequencer.clearListeners();
-        }
-      };
-    }
-  }, [onPlayPause]);
+    // Listen for play state changes
+    const handlePlayStateChange = (playing: boolean) => {
+      setIsPlaying(playing);
+      if (onPlay) onPlay(playing);
+    };
+    
+    sequencer.on('step', handleStepChange);
+    sequencer.on('playStateChange', handlePlayStateChange);
+    
+    // Clean up listeners when component unmounts
+    return () => {
+      sequencer.off('step', handleStepChange);
+      sequencer.off('playStateChange', handlePlayStateChange);
+    };
+  }, [onPlay]);
 
   // Set up MIDI clock handling
   useEffect(() => {
@@ -119,7 +113,7 @@ const TransportControls: React.FC<TransportControlsProps> = ({
       }
     };
 
-    if (typeof midiService.addEventListener === 'function') {
+    if (midiService && typeof midiService.addEventListener === 'function') {
       midiService.addEventListener(handleMidiMessage);
 
       return () => {
@@ -132,15 +126,15 @@ const TransportControls: React.FC<TransportControlsProps> = ({
 
   // Handle play/pause button click
   const handlePlayPause = () => {
-    const newIsPlaying = !isPlaying;
-    
-    if (!isMIDIClockEnabled && sequencer && typeof sequencer.togglePlay === 'function') {
-      // Only control internal sequencer if not slaved to MIDI clock
-      sequencer.togglePlay();
+    if (!isMIDIClockEnabled) {
+      if (isPlaying) {
+        sequencer.stop();
+      } else {
+        sequencer.start();
+      }
     }
     
-    setIsPlaying(newIsPlaying);
-    if (onPlayPause) onPlayPause(newIsPlaying);
+    // State will be updated via event listener
   };
 
   // Handle record button click
@@ -152,9 +146,8 @@ const TransportControls: React.FC<TransportControlsProps> = ({
   // Handle tempo change
   const handleTempoChange = (newTempo: number) => {
     setTempo(newTempo);
-    if (sequencer && typeof sequencer.setBpm === 'function') {
-      sequencer.setBpm(newTempo);
-    }
+    sequencer.setTempo(newTempo);
+    
     if (onTempoChange) onTempoChange(newTempo);
   };
 
@@ -169,9 +162,9 @@ const TransportControls: React.FC<TransportControlsProps> = ({
 
   // Handle reset button click
   const handleReset = () => {
-    if (sequencer && typeof sequencer.reset === 'function') {
-      sequencer.reset();
-    }
+    sequencer.stop();
+    setCurrentStep(-1);
+    // Additional reset functionality would go here
   };
 
   // Handle MIDI clock toggle
@@ -179,7 +172,7 @@ const TransportControls: React.FC<TransportControlsProps> = ({
     const newMIDIClockEnabled = !isMIDIClockEnabled;
     setIsMIDIClockEnabled(newMIDIClockEnabled);
     
-    if (newMIDIClockEnabled && sequencer && typeof sequencer.stop === 'function') {
+    if (newMIDIClockEnabled && isPlaying) {
       // Stop internal sequencer when using external clock
       sequencer.stop();
     }

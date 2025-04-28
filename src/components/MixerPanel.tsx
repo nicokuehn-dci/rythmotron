@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Knob from './KnobWrapper';
-import { Card } from './ui/card';
 import Slider from './ui/slider';
-import { Button } from './ui/button';
 import LED from './ui/led';
 import Switch from './ui/switch';
+import styles from './mixerpanel.module.css';
 
 interface MixerPanelProps {
   className?: string;
@@ -18,7 +17,7 @@ interface MixerPanelProps {
   onSelectTrack?: (trackId: number) => void;
 }
 
-// Erweiterte Track-Interface mit zusätzlichen Parametern im Qu-16-Stil
+// Extended Track interface with additional parameters in the style of Qu-16
 interface Track {
   id: number;
   name: string;
@@ -57,7 +56,7 @@ interface Track {
   color: string;
 }
 
-// Erweiterte Master-Interface
+// Extended Master interface
 interface Master {
   volume: number;
   auxMaster: number[];
@@ -80,7 +79,7 @@ const MixerPanel: React.FC<MixerPanelProps> = ({
   selectedTrack = -1,
   onSelectTrack
 }) => {
-  // Verwende externe Tracks, falls sie übergeben wurden, sonst den Standard-State
+  // Use external tracks if provided, otherwise default to internal state
   const [internalTracks, setInternalTracks] = useState<Track[]>([
     { 
       id: 0, 
@@ -380,7 +379,7 @@ const MixerPanel: React.FC<MixerPanelProps> = ({
     }
   ]);
 
-  // Master-State
+  // Master state
   const [master, setMaster] = useState<Master>({
     volume: 80,
     auxMaster: [70, 65, 60, 75],
@@ -392,10 +391,10 @@ const MixerPanel: React.FC<MixerPanelProps> = ({
     }
   });
 
-  // Verwende die externen Tracks, falls vorhanden
+  // Use external tracks if available
   const tracks = externalTracks || internalTracks;
 
-  // Erweitern der Track-Parameter
+  // Expand track parameters
   const handleVolumeChange = (trackId: number, volume: number) => {
     if (onTrackVolumeChange) {
       onTrackVolumeChange(trackId, volume);
@@ -454,7 +453,7 @@ const MixerPanel: React.FC<MixerPanelProps> = ({
     setMaster(prevMaster => ({ ...prevMaster, volume }));
   };
 
-  // Hilfsfunktion zum Konvertieren von Farbnamen in Hex-Codes für CSS-Styling
+  // Helper function to convert color names to hex codes for CSS styling
   const getColorHex = (colorName: string): string => {
     const colorMap: Record<string, string> = {
       'purple': '#9333ea',
@@ -466,10 +465,10 @@ const MixerPanel: React.FC<MixerPanelProps> = ({
       'indigo': '#4f46e5',
       'pink': '#be185d',
     };
-    return colorMap[colorName] || '#60a5fa'; // Default-Farbe, falls nicht in der Map
+    return colorMap[colorName] || '#60a5fa'; // Default color if not in map
   };
 
-  // Hilfsfunktion, um zu prüfen, ob einem Track ein Pad zugeordnet ist
+  // Helper function to check if a track has an assigned pad
   const getAssignedPads = (trackId: number): number[] => {
     if (!assignedPads) return [];
     
@@ -478,83 +477,180 @@ const MixerPanel: React.FC<MixerPanelProps> = ({
       .map(([padId]) => parseInt(padId));
   };
 
-  // Anzahl der Aux-Sends (für die Anzeige)
+  // Number of aux sends (for display)
   const auxCount = 4;
 
+  // Add animation frame reference for level meters
+  const animationRef = useRef<number | null>(null);
+  const [meterLevels, setMeterLevels] = useState<number[]>([]);
+  
+  // Simulate audio meter levels - in a real app, this would come from actual audio analysis
+  useEffect(() => {
+    const updateMeters = () => {
+      const newLevels = tracks.map(track => {
+        // Base level on volume but add random fluctuation to simulate audio
+        const baseLevel = track.mute ? 0 : (track.volume / 100);
+        const fluctuation = Math.random() * 0.2 * baseLevel;
+        return Math.min(baseLevel + fluctuation, 1);
+      });
+      
+      setMeterLevels(newLevels);
+      animationRef.current = requestAnimationFrame(updateMeters);
+    };
+    
+    animationRef.current = requestAnimationFrame(updateMeters);
+    
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [tracks]);
+
+  // Create a reverse mapping for displaying pad assignments
+  const createPadToTrackMap = () => {
+    if (!assignedPads) return {};
+    
+    const padMap: Record<number, {trackId: number, trackName: string, trackColor: string}> = {};
+    
+    Object.entries(assignedPads).forEach(([padId, trackId]) => {
+      const track = tracks.find(t => t.id === trackId);
+      if (track) {
+        padMap[parseInt(padId)] = {
+          trackId, 
+          trackName: track.name,
+          trackColor: track.color
+        };
+      }
+    });
+    
+    return padMap;
+  };
+  
+  const padToTrackMap = createPadToTrackMap();
+
   return (
-    <div className={`bg-zinc-800 rounded-lg p-4 overflow-x-auto ${className}`} 
-      style={{ 
-        minHeight: '700px',
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
-      <div className="flex space-x-2 mb-4 flex-1">
-        {/* Track-Channel-Strips horizontal layout */}
-        <div className="flex space-x-2 flex-1">
-          {tracks.map((track) => {
-            const assignedPadsList = getAssignedPads(track.id);
-            const colorHex = getColorHex(track.color);
-            
-            return (
-              <div 
-                key={track.id} 
-                className={`flex flex-col w-24 bg-zinc-900 rounded-md p-2 overflow-hidden transition-all ${
-                  track.id === selectedTrack ? 'ring-2' : ''
-                }`}
-                style={{ 
-                  boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-                  borderLeft: `3px solid ${colorHex}`,
-                  opacity: track.mute ? 0.7 : 1,
-                  height: '100%'
-                }}
-                onClick={() => handleTrackSelection(track.id)}
-              >
-                {/* Channel-Name und LEDs */}
-                <div className="text-center mb-4 relative">
-                  <div className="font-semibold text-sm truncate" style={{ color: colorHex }}>
-                    {track.name}
-                  </div>
-                  {/* Zeige zugewiesene Pad-Nummern an */}
-                  {assignedPadsList.length > 0 && (
-                    <div className="text-[10px] text-zinc-400 mb-1">
-                      Pads: {assignedPadsList.map(id => id + 1).join(', ')}
-                    </div>
-                  )}
-                  <div className="flex justify-center space-x-1 mt-1">
-                    <LED active={!track.mute} color="#22c55e" size="xs" />
-                    <LED active={track.solo} color="#eab308" size="xs" />
-                  </div>
-                </div>
-                
-                {/* EQ-Anzeige (vereinfacht) */}
-                <div className="h-32 mb-4 bg-zinc-800 rounded p-1 flex items-end space-x-[1px]"> {/* Increased height to h-32 */}
-                  {Array.from({ length: 12 }).map((_, i) => {
-                    // EQ-Kurve simulieren
-                    let height = 30;
-                    
-                    if (track.eq) {
-                      if (i < 3) height = (track.eq.low / 100) * 90; // Increased multiplier for taller bars
-                      else if (i < 7) height = (track.eq.mid / 100) * 90; 
-                      else height = (track.eq.high / 100) * 90;
-                    }
-                    
-                    return (
+    <>
+      {/* Pad Assignment Box */}
+      {Object.keys(padToTrackMap).length > 0 && (
+        <div className={styles.padAssignmentBox}>
+          <div className={styles.padAssignmentTitle}>Pad Assignments</div>
+          <div className={styles.padAssignmentGrid}>
+            {Array.from({ length: 16 }).map((_, i) => {
+              const padInfo = padToTrackMap[i];
+              const colorHex = padInfo ? getColorHex(padInfo.trackColor) : '';
+              
+              return (
+                <div key={i} className={styles.padItem}>
+                  <div className={styles.padNumber}>{i + 1}</div>
+                  {padInfo ? (
+                    <>
+                      <div className={styles.padTrack}>{padInfo.trackName}</div>
                       <div 
-                        key={i} 
-                        className="flex-1 rounded-t"
-                        style={{ 
-                          height: `${height}px`,
-                          backgroundColor: track.mute ? '#4b5563' : colorHex,
-                          opacity: track.mute ? 0.3 : 0.7
-                        }}
-                      ></div>
-                    );
-                  })}
+                        className={styles.padTrackColored} 
+                        style={{ backgroundColor: colorHex }}
+                      />
+                    </>
+                  ) : (
+                    <div className={styles.padTrack}>-</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      
+      <div className={`rounded-lg p-4 ${styles.mixerContainer} ${className}`}>
+        {/* Audio channels in grid */}
+        {tracks.map((track, index) => {
+          const assignedPadsList = getAssignedPads(track.id);
+          const colorHex = getColorHex(track.color);
+          const meterLevel = meterLevels[index] || 0;
+          
+          return (
+            <div 
+              key={track.id} 
+              className={`${styles.channelStrip} ${
+                track.id === selectedTrack ? styles.selectedChannel : ''
+              }`}
+              style={{ 
+                borderLeft: `3px solid ${colorHex}`,
+                opacity: track.mute ? 0.7 : 1,
+              }}
+              onClick={() => handleTrackSelection(track.id)}
+            >
+              {/* Channel Name and LEDs */}
+              <div className="text-center mb-2 relative">
+                <div className={styles.channelLabel} style={{ color: colorHex }}>
+                  {track.name}
                 </div>
                 
-                {/* Pan-Steuerung */}
-                <div className="mb-6 text-center"> {/* Increased margin */}
-                  <div className="text-xs text-zinc-400 mb-2">Pan</div>
+                {/* Assigned Pad Numbers */}
+                {assignedPadsList.length > 0 && (
+                  <div className="text-[8px] text-zinc-400 mb-1">
+                    Pads: {assignedPadsList.map(id => id + 1).join(', ')}
+                  </div>
+                )}
+                
+                <div className="flex justify-center space-x-1 mt-1">
+                  <LED active={!track.mute} color="#22c55e" size="xs" />
+                  <LED active={track.solo} color="#eab308" size="xs" />
+                </div>
+              </div>
+              
+              {/* EQ Visualization */}
+              <div className={styles.eqDisplay}>
+                {Array.from({ length: 8 }).map((_, i) => {
+                  // Simulate EQ curve
+                  let height = 20;
+                  
+                  if (track.eq) {
+                    if (i < 2) height = (track.eq.low / 100) * 40;
+                    else if (i < 5) height = (track.eq.mid / 100) * 40; 
+                    else height = (track.eq.high / 100) * 40;
+                  }
+                  
+                  return (
+                    <div 
+                      key={i} 
+                      className={styles.eqBar}
+                      style={{ 
+                        height: `${height}px`,
+                        backgroundColor: track.mute ? '#4b5563' : colorHex,
+                        opacity: track.mute ? 0.3 : 0.7,
+                      }}
+                    ></div>
+                  );
+                })}
+              </div>
+              
+              {/* Level Meter */}
+              <div className={styles.levelMeter}>
+                {Array.from({ length: 12 }).map((_, i) => {
+                  const threshold = i / 12;
+                  const isActive = meterLevel >= threshold;
+                  let color = '#22c55e'; // green for lower levels
+                  
+                  if (i > 8) color = '#dc2626'; // red for high levels
+                  else if (i > 6) color = '#eab308'; // yellow for mid levels
+                  
+                  return (
+                    <div 
+                      key={i} 
+                      className={`${styles.meterSegment} ${isActive ? styles.active : ''}`}
+                      style={{
+                        backgroundColor: isActive ? color : 'rgba(255,255,255,0.1)',
+                      }}
+                    ></div>
+                  );
+                })}
+              </div>
+              
+              {/* Pan Control */}
+              <div className={styles.panControl}>
+                <div className="text-[10px] text-zinc-400 mb-1">Pan</div>
+                <div className={styles.knobContainer}>
                   <Knob
                     value={track.pan}
                     onChange={(v) => handlePanChange(track.id, v)}
@@ -564,120 +660,169 @@ const MixerPanel: React.FC<MixerPanelProps> = ({
                     color={colorHex}
                   />
                 </div>
-                
-                {/* Fader und Mute/Solo */}
-                <div className="flex flex-col items-center flex-1">
-                  <div className="h-60 mb-6 w-6 relative"> {/* Increased height from h-40 to h-60 */}
-                    <Slider
-                      value={track.volume}
-                      onChange={(value) => handleVolumeChange(track.id, value)}
-                      max={100}
-                      step={1}
-                      orientation="vertical"
-                      className="h-full"
-                    />
-                    <div 
-                      className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-2 rounded-t"
-                      style={{
-                        height: `${track.volume}%`,
-                        backgroundColor: track.mute ? '#4b5563' : colorHex,
-                        opacity: track.mute ? 0.3 : 0.6
-                      }}
-                    ></div>
-                  </div>
-                  
-                  <div className="flex space-x-1 mt-2">
-                    <button 
-                      className={`w-8 h-8 rounded text-xs flex items-center justify-center ${
-                        track.mute ? 'bg-red-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-                      }`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleMuteToggle(track.id);
-                      }}
-                    >
-                      M
-                    </button>
-                    <button 
-                      className={`w-8 h-8 rounded text-xs flex items-center justify-center ${
-                        track.solo ? 'bg-yellow-500 text-white' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-                      }`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSoloToggle(track.id);
-                      }}
-                    >
-                      S
-                    </button>
-                  </div>
-                </div>
               </div>
-            );
-          })}
-        </div>
-
-        {/* Master-Channel separated with margin-left */}
-        <div className="w-32 bg-zinc-900 rounded-md p-2 border-l-[3px] border-l-gray-400 flex flex-col" style={{ height: '100%' }}>
-          <div className="text-center mb-4">
-            <div className="font-semibold text-sm text-gray-300">MASTER</div>
+              
+              {/* Fader */}
+              <div className="flex flex-col items-center flex-1">
+                <div className={styles.faderContainer}>
+                  <Slider
+                    value={track.volume}
+                    onChange={(value) => handleVolumeChange(track.id, value)}
+                    max={100}
+                    step={1}
+                    orientation="vertical"
+                    className={styles.fader}
+                  />
+                  <div 
+                    className={styles.faderTrack}
+                    style={{
+                      height: `${track.volume}%`,
+                      backgroundColor: track.mute ? '#4b5563' : colorHex,
+                    }}
+                  ></div>
+                </div>
+                
+                <div className={styles.channelControls}>
+                  <button 
+                    className={`${styles.channelButton} ${track.mute ? styles.muteActive : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation(); 
+                      handleMuteToggle(track.id);
+                    }}
+                    title="Mute"
+                  >
+                    M
+                  </button>
+                  <button 
+                    className={`${styles.channelButton} ${track.solo ? styles.soloActive : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation(); 
+                      handleSoloToggle(track.id);
+                    }}
+                    title="Solo"
+                  >
+                    S
+                  </button>
+                </div>
+                
+                <div className="text-[10px] text-zinc-400">{track.id + 1}</div>
+              </div>
+            </div>
+          );
+        })}
+        
+        {/* Master Channel */}
+        <div className={styles.masterSection}>
+          <div className="text-center mb-3">
+            <div className={styles.masterLabel}>MASTER</div>
             <div className="flex justify-center space-x-1 mt-1">
               <LED active={true} color="#22c55e" size="xs" />
+              <LED active={master.monitor.phones} color="#3b82f6" size="xs" />
+              <LED active={master.monitor.talkback} color="#eab308" size="xs" />
             </div>
           </div>
           
-          {/* Level-Anzeige */}
-          <div className="h-32 mb-4 bg-zinc-800 rounded p-1 flex space-x-[1px]"> {/* Increased height to h-32 */}
-            <div className="flex-1 flex flex-col-reverse">
-              <div 
-                className="bg-gradient-to-t from-green-500 to-yellow-500 rounded-t"
-                style={{ height: `${master.volume * 0.6}%` }}
-              ></div>
+          {/* Master Level Visualization */}
+          <div className={styles.masterLevels}>
+            <div className={styles.masterLevelLeft}>
+              {Array.from({ length: 15 }).map((_, i) => {
+                const threshold = i / 15;
+                const avgLevel = tracks.filter(t => !t.mute).reduce((sum, t, idx) => 
+                  sum + (meterLevels[idx] || 0), 0) / 
+                  tracks.filter(t => !t.mute).length;
+                const masterLevel = avgLevel * (master.volume / 100);
+                const isActive = masterLevel >= threshold;
+                
+                let color = '#22c55e'; // green
+                if (i > 11) color = '#dc2626'; // red
+                else if (i > 9) color = '#eab308'; // yellow
+                
+                return (
+                  <div 
+                    key={i} 
+                    className={`${styles.masterMeterSegment} ${isActive ? styles.active : ''}`}
+                    style={{
+                      backgroundColor: isActive ? color : 'rgba(255,255,255,0.1)',
+                    }}
+                  ></div>
+                );
+              })}
             </div>
-            <div className="flex-1 flex flex-col-reverse">
-              <div 
-                className="bg-gradient-to-t from-green-500 to-yellow-500 rounded-t"
-                style={{ height: `${master.volume * 0.55}%` }}
-              ></div>
+            <div className={styles.masterLevelRight}>
+              {Array.from({ length: 15 }).map((_, i) => {
+                const threshold = i / 15;
+                const avgLevel = tracks.filter(t => !t.mute).reduce((sum, t, idx) => 
+                  sum + (meterLevels[idx] || 0), 0) / 
+                  tracks.filter(t => !t.mute).length;
+                const masterLevel = avgLevel * (master.volume / 100);
+                const isActive = masterLevel >= threshold;
+                
+                let color = '#22c55e'; // green
+                if (i > 11) color = '#dc2626'; // red
+                else if (i > 9) color = '#eab308'; // yellow
+                
+                return (
+                  <div 
+                    key={i} 
+                    className={`${styles.masterMeterSegment} ${isActive ? styles.active : ''}`}
+                    style={{
+                      backgroundColor: isActive ? color : 'rgba(255,255,255,0.1)',
+                    }}
+                  ></div>
+                );
+              })}
             </div>
           </div>
           
-          {/* Master-Fader */}
-          <div className="flex flex-col items-center mt-auto flex-1">
-            <div className="text-xs text-zinc-400 mb-2">Level</div>
-            <div className="h-60 mb-6 w-10 relative"> {/* Increased height from h-40 to h-60 */}
-              <Slider
-                value={master.volume}
-                onChange={(value) => handleMasterVolumeChange(value)}
-                max={100}
-                step={1}
-                orientation="vertical"
-                className="h-full"
-              />
-              <div 
-                className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-3 rounded-t bg-gradient-to-t from-blue-500 to-indigo-600 opacity-70"
-                style={{ height: `${master.volume}%` }}
-              ></div>
+          {/* Master Fader */}
+          <div className={styles.masterFaderContainer}>
+            <Slider
+              value={master.volume}
+              onChange={handleMasterVolumeChange}
+              max={100}
+              step={1}
+              orientation="vertical"
+              className={styles.masterFader}
+            />
+            <div 
+              className={styles.masterFaderTrack}
+              style={{
+                height: `${master.volume}%`,
+              }}
+            ></div>
+          </div>
+          
+          {/* Master Controls */}
+          <div className="w-full mt-auto">
+            <div className={styles.monitorSection}>
+              <h4 className="text-[10px] font-semibold mb-2 text-center">Monitor</h4>
+              <div className="flex flex-col space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-[9px] text-zinc-400">Phones</label>
+                  <Switch 
+                    checked={master.monitor.phones} 
+                    onCheckedChange={(checked) => setMaster(prev => ({
+                      ...prev, 
+                      monitor: {...prev.monitor, phones: checked}
+                    }))}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <label className="text-[9px] text-zinc-400">Talk</label>
+                  <Switch 
+                    checked={master.monitor.talkback} 
+                    onCheckedChange={(checked) => setMaster(prev => ({
+                      ...prev, 
+                      monitor: {...prev.monitor, talkback: checked}
+                    }))}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="text-sm font-medium text-gray-300 mb-2">{master.volume}</div>
           </div>
         </div>
       </div>
-      
-      {/* Untere Leiste mit Aux-Sends, etc. */}
-      <div className="flex justify-between items-center pt-4 border-t border-zinc-700">
-        <div className="text-xs text-zinc-500">
-          {tracks.filter(t => t.mute).length} Muted | {tracks.filter(t => t.solo).length} Soloed
-        </div>
-        <div className="flex space-x-2">
-          <button className="text-xs bg-zinc-700 hover:bg-zinc-600 px-2 py-1 rounded text-zinc-300">
-            Reset All
-          </button>
-          <button className="text-xs bg-purple-800 hover:bg-purple-700 px-2 py-1 rounded text-white">
-            Save Mixer State
-          </button>
-        </div>
-      </div>
-    </div>
+    </>
   );
 };
 

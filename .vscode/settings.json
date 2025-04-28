@@ -1,0 +1,17 @@
+{
+    "servers": 
+    "mcpManager.servers": [
+        {}
+        {
+          "name": "github-mcp-with-node",
+          "type": "stdio",
+          "command": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-github"],
+          "env": {
+            "GITHUB_PERSONAL_ACCESS_TOKEN": "<YOUR_TOKEN>"
+          }
+        }
+      
+    ]
+  }
+  

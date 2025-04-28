@@ -39,18 +39,88 @@
     --color-button-premium-gradient: linear-gradient(145deg, #60a5fa, #3b82f6);
     
     --border-module: #475569;      /* Mittelgrau-Blau für Ränder */
-    --shadow-standard: 0px 2px 4px rgba(0, 0, 0, 0.3),
-                       inset 0px 1px 0px rgba(255, 255, 255, 0.1);
+    
+    /* Enhanced 3D shadows for deeper visual effect */
+    --shadow-standard: 0px 4px 8px rgba(0, 0, 0, 0.5),
+                      0px 2px 4px rgba(0, 0, 0, 0.3),
+                      inset 0px 1px 0px rgba(255, 255, 255, 0.1);
+    
     --shadow-inset: inset 2px 2px 5px rgba(0, 0, 0, 0.5),
-                    inset -1px -1px 3px rgba(255, 255, 255, 0.05);
+                   inset -1px -1px 3px rgba(255, 255, 255, 0.05);
+    
+    --shadow-3d-panel: 0px 10px 15px rgba(0, 0, 0, 0.6),
+                      0px 4px 6px rgba(0, 0, 0, 0.4),
+                      inset 0px 1px 0px rgba(255, 255, 255, 0.07);
+    
+    --shadow-3d-module: 0px 5px 10px rgba(0, 0, 0, 0.5),
+                       0px 2px 4px rgba(0, 0, 0, 0.3),
+                       inset 0px 1px 0px rgba(255, 255, 255, 0.05);
+    
+    --shadow-3d-control: 0px 3px 6px rgba(0, 0, 0, 0.4),
+                        0px 1px 3px rgba(0, 0, 0, 0.3),
+                        inset 0px 1px 0px rgba(255, 255, 255, 0.1);
+    
+    --shadow-3d-knob: 0px 4px 8px rgba(0, 0, 0, 0.5),
+                     0px 2px 4px rgba(0, 0, 0, 0.3),
+                     inset 0px -2px 4px rgba(0, 0, 0, 0.2),
+                     inset 0px 1px 2px rgba(255, 255, 255, 0.1);
+                     
     --accent-glow: rgba(66, 220, 219, 0.5);
     
     /* Additional shadow effects from gradient.md */
     --shadow-glow: 0 0 8px var(--accent-glow);
     --shadow-premium-button: 0 2px 4px rgba(0, 0, 0, 0.3),
                             0 0 8px rgba(96, 165, 250, 0.5);
+                            
+    /* Neue 3D-Effekte für den Mixer */
+    --shadow-mixer-box: 0px 15px 25px rgba(0, 0, 0, 0.7),
+                       0px 8px 10px rgba(0, 0, 0, 0.5),
+                       inset 0px 1px 0px rgba(255, 255, 255, 0.08);
+                       
+    --shadow-audio-channel: 0px 6px 12px rgba(0, 0, 0, 0.6),
+                          0px 3px 6px rgba(0, 0, 0, 0.4),
+                          inset 0px 1px 0px rgba(255, 255, 255, 0.06);
+                          
+    --shadow-channel-strip-container: 0px 12px 20px rgba(0, 0, 0, 0.65),
+                                    0px 6px 10px rgba(0, 0, 0, 0.45),
+                                    inset 0px 1px 0px rgba(255, 255, 255, 0.07);
 }
-  
+
+/* Neue vertikale Ausrichtung für den Mixer */
+.mixerContainer {
+    display: flex;
+    flex-direction: row; /* Horizontale Ausrichtung für Container */
+    background: linear-gradient(145deg, var(--color-panel-start), var(--color-panel-end));
+    border-radius: 8px;
+    border: 1px solid #1a1a1a;
+    box-shadow: var(--shadow-mixer-box);
+    padding: 12px;
+    margin: 15px;
+    transform-style: preserve-3d;
+    perspective: 1200px;
+    position: relative;
+    transform: perspective(800px) rotateX(2deg);
+    overflow: hidden; /* Verhindert Overflow */
+    align-items: flex-start; /* Ausrichtung oben */
+    justify-content: flex-start;
+    height: auto;
+    width: 100%;
+}
+
+/* Vertikale Ausrichtung der Kanäle */
+.channelsSection {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); /* Automatisches Grid für Kanäle */
+    grid-auto-flow: column; /* Verteilt Elemente vertikal in Spalten */
+    grid-template-rows: repeat(auto-fill, minmax(200px, 1fr)); /* Reihen für vertikale Ausrichtung */
+    gap: 8px;
+    transform: translateZ(5px);
+    flex-grow: 1;
+    overflow-y: auto; /* Vertikales Scrollen ermöglichen */
+    height: 100%;
+    align-content: flex-start;
+}
+
 .channelStripOmni {
     display: flex;
     flex-direction: column;
@@ -59,11 +129,13 @@
     background: linear-gradient(to bottom, var(--color-panel-start), var(--color-panel-end));
     border-radius: 6px;
     border: 1px solid #1a1a1a;
-    box-shadow: var(--shadow-standard);
+    box-shadow: var(--shadow-3d-panel);
     padding: 8px;
     color: var(--color-text-light);
     font-family: sans-serif;
     border-left: 4px solid var(--channel-color); /* Farbiger Akzent */
+    position: relative;
+    transform: perspective(1000px) rotateX(2deg);
 }
   
 .header {
@@ -71,12 +143,15 @@
     margin-bottom: 6px;
     border-bottom: 1px solid var(--border-module);
     text-align: center;
+    position: relative;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
   
 .channelName {
     font-weight: 600;
     color: white;
     font-size: 0.9em;
+    text-shadow: 0px 1px 2px rgba(0,0,0,0.5);
 }
   
 .moduleSection {
@@ -85,12 +160,14 @@
     border-radius: 4px;
     padding: 6px;
     margin-bottom: 8px;
-    box-shadow: var(--shadow-inset);
+    box-shadow: var(--shadow-3d-module);
+    transform: translateZ(5px);
+    position: relative;
 }
 .outputSection {
-      flex-grow: 1; /* Lässt Output-Sektion den Rest füllen */
-      display: flex;
-      flex-direction: column;
+    flex-grow: 1; /* Lässt Output-Sektion den Rest füllen */
+    display: flex;
+    flex-direction: column;
 }
   
   
@@ -103,6 +180,7 @@
     margin-bottom: 8px;
     padding-bottom: 3px;
     border-bottom: 1px solid rgba(71, 85, 105, 0.5); /* Leichte Trennlinie */
+    text-shadow: 0px 1px 1px rgba(0,0,0,0.4);
 }
   
 .controlsGrid {
@@ -111,6 +189,7 @@
     gap: 6px;
     align-items: start; /* Sorgt dafür, dass Wrapper oben starten */
     justify-items: center; /* Zentriert Wrapper horizontal */
+    position: relative;
 }
   
 /* --- Placeholder Styles (ersetze durch deine echten Component-Styles) --- */
@@ -118,6 +197,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    position: relative;
+    transform: translateZ(10px);
 }
   
 .knobPlaceholder {
@@ -126,14 +207,31 @@
     background: linear-gradient(145deg, var(--color-knob-base-start), var(--color-knob-base-end)); /* Updated knob gradient */
     border: 1px solid #1a1a1a;
     border-radius: 50%;
-    box-shadow: var(--shadow-inset);
+    box-shadow: var(--shadow-3d-knob);
     margin-bottom: 3px;
+    position: relative;
+    transform-style: preserve-3d;
+}
+
+.knobPlaceholder::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 2px;
+    height: 12px;
+    background: var(--color-knob-indicator);
+    transform: translate(-50%, -50%) rotate(45deg);
+    transform-origin: bottom center;
+    border-radius: 1px;
+    box-shadow: 0 0 3px rgba(96, 165, 250, 0.5);
 }
   
 .controlLabel {
     font-size: 0.65em;
     color: var(--color-text-dim);
     margin-top: 1px;
+    text-shadow: 0px 1px 1px rgba(0,0,0,0.5);
 }
   
 .buttonPlaceholder {
@@ -144,45 +242,76 @@
     border: 1px solid rgba(80, 80, 80, 0.4);
     border-radius: 3px;
     cursor: pointer;
-    box-shadow: var(--shadow-standard);
+    box-shadow: var(--shadow-3d-control);
     transition: all 0.1s ease-in-out;
     min-width: 30px; /* Mindestbreite für kleine Buttons */
     text-align: center;
+    position: relative;
+    transform: translateZ(5px);
 }
 .buttonPlaceholder:hover {
     filter: brightness(1.2);
+    transform: translateY(-1px) translateZ(5px);
+    box-shadow: var(--shadow-3d-control), 0 6px 10px rgba(0,0,0,0.3);
 }
 .buttonPlaceholder.active {
     background: linear-gradient(145deg, var(--color-button-on-start), var(--color-button-on-end)); /* Updated LED active gradient */
     color: #064e3b;
     box-shadow: 0 0 5px rgba(66, 220, 219, 0.7), 0 0 15px rgba(66, 220, 219, 0.5);
     border-color: #20a5a4;
+    transform: translateZ(8px);
 }
   
 .faderMeterWrapper {
-      display: flex;
-      flex-grow: 1; /* Nimmt verfügbaren Platz in Output Sektion ein */
-      align-items: stretch; /* Elemente strecken sich vertikal */
-      padding-top: 5px;
+    display: flex;
+    flex-grow: 1; /* Nimmt verfügbaren Platz in Output Sektion ein */
+    align-items: stretch; /* Elemente strecken sich vertikal */
+    padding-top: 5px;
+    position: relative;
 }
   
 .faderControls {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between; /* Verteilt Pan, M, S */
-      align-items: center;
-      margin-right: 8px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Verteilt Pan, M, S */
+    align-items: center;
+    margin-right: 8px;
+    position: relative;
+    transform: translateZ(5px);
 }
-.faderControls .knobPlaceholder { width: 24px; height: 24px; }
-.faderControls .buttonPlaceholder { width: 24px; height: 20px; padding: 2px; font-size: 0.6em; }
-.muteButton.active { background: linear-gradient(145deg, #f87171, #ef4444); color: white; border-color: #b91c1c; }
-.soloButton.active { background: linear-gradient(145deg, #facc15, #eab308); color: #713f12; border-color: #ca8a04; }
+.faderControls .knobPlaceholder { 
+    width: 24px; 
+    height: 24px; 
+    box-shadow: var(--shadow-3d-knob);
+}
+.faderControls .buttonPlaceholder { 
+    width: 24px; 
+    height: 20px; 
+    padding: 2px; 
+    font-size: 0.6em;
+    box-shadow: var(--shadow-3d-control);
+}
+.muteButton.active { 
+    background: linear-gradient(145deg, #f87171, #ef4444); 
+    color: white; 
+    border-color: #b91c1c; 
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.5), 0 0 15px rgba(239, 68, 68, 0.3);
+}
+.soloButton.active { 
+    background: linear-gradient(145deg, #facc15, #eab308); 
+    color: #713f12; 
+    border-color: #ca8a04; 
+    box-shadow: 0 0 8px rgba(234, 179, 8, 0.5), 0 0 15px rgba(234, 179, 8, 0.3);
+}
   
 .faderPlaceholderWrapper {
-      flex-grow: 1; /* Nimmt den meisten Platz ein */
-      height: 100%; /* Wichtig für internen Fader */
-      display: flex;
-      justify-content: center; /* Zentriert Fader-Bahn */
+    flex-grow: 1; /* Nimmt den meisten Platz ein */
+    height: 100%; /* Wichtig für internen Fader */
+    display: flex;
+    justify-content: center; /* Zentriert Fader-Bahn */
+    position: relative;
+    transform-style: preserve-3d;
+    perspective: 800px;
 }
 .faderTrack {
     width: 8px;
@@ -190,16 +319,208 @@
     background: linear-gradient(to right, var(--color-fader-track-start), var(--color-fader-track-end));
     border-radius: 4px;
     position: relative;
-    box-shadow: var(--shadow-inset);
+    box-shadow: var(--shadow-inset), 0 2px 5px rgba(0,0,0,0.3);
+    transform: translateZ(0);
 }
 .faderThumb {
     position: absolute;
     left: -4px;
     width: 16px;
     height: 25px;
-    background: linear-gradient(145deg, var(--color-knob-base-start), var(--color-knob-base-end)); /* Updated to match knob gradient */
+    background: linear-gradient(145deg, var(--color-fader-handle-start), var(--color-fader-handle-end));
     border: 1px solid #444;
     border-radius: 2px;
-    box-shadow: var(--shadow-standard);
+    box-shadow: var(--shadow-3d-control), 0 5px 10px rgba(0,0,0,0.4);
     cursor: ns-resize;
+    transform: translateZ(10px);
+}
+
+/* Hinzugefügte 3D-Effekt-Klassen */
+.depth-effect {
+    transform-style: preserve-3d;
+    perspective: 1000px;
+}
+
+.float-element {
+    transition: all 0.2s ease;
+}
+
+.float-element:hover {
+    transform: translateY(-2px) translateZ(10px);
+    box-shadow: var(--shadow-3d-control), 0 10px 20px rgba(0,0,0,0.4);
+}
+
+/* Neue Klassen für den Mixer mit 3D-Effekten */
+.mixerContainer {
+    display: flex;
+    flex-direction: row; /* Horizontale Hauptausrichtung */
+    background: linear-gradient(145deg, var(--color-panel-start), var(--color-panel-end));
+    border-radius: 8px;
+    border: 1px solid #1a1a1a;
+    box-shadow: var(--shadow-mixer-box);
+    padding: 12px;
+    margin: 15px;
+    transform-style: preserve-3d;
+    perspective: 1200px;
+    position: relative;
+    transform: perspective(800px) rotateX(2deg);
+    height: calc(100vh - 100px); /* Anpassbare Höhe */
+    overflow: auto;
+}
+
+.channelsSection {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); /* Spaltenbasierte Ausrichtung */
+    grid-auto-flow: column; /* Füllt Spalten zuerst */
+    grid-template-rows: repeat(auto-fill, minmax(200px, 1fr)); 
+    gap: 8px;
+    transform: translateZ(5px);
+    overflow-y: auto; /* Vertikales Scrollen */
+    align-content: flex-start;
+}
+
+.audioChannelStrip {
+    background: linear-gradient(to bottom, var(--color-module-start), var(--color-module-end));
+    border-radius: 5px;
+    border: 1px solid #1a1a1a;
+    box-shadow: var(--shadow-audio-channel);
+    padding: 8px;
+    min-width: 70px; /* Etwas schmalere Kanäle */
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    transform: translateZ(10px);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    margin-bottom: 8px;
+}
+
+.audioChannelStrip:hover {
+    transform: translateZ(15px) translateY(-2px);
+    box-shadow: var(--shadow-audio-channel), 0px 8px 16px rgba(0, 0, 0, 0.5);
+}
+
+.audioChannelStrip.selected {
+    border-color: var(--color-knob-indicator);
+    box-shadow: var(--shadow-audio-channel), 0 0 10px var(--accent-glow);
+    transform: translateZ(20px) scale(1.02);
+}
+
+.channelStripsContainer {
+    width: 230px;
+    margin-left: 15px;
+    background: linear-gradient(145deg, var(--color-panel-start), #121212);
+    border-radius: 6px;
+    border: 1px solid #1a1a1a;
+    box-shadow: var(--shadow-channel-strip-container);
+    padding: 10px;
+    position: relative;
+    transform: translateZ(15px) perspective(500px) rotateY(-2deg);
+    transform-origin: left center;
+}
+
+.channelStripsTitle {
+    font-size: 0.85em;
+    font-weight: bold;
+    text-align: center;
+    color: var(--color-text-light);
+    border-bottom: 1px solid var(--border-module);
+    padding-bottom: 6px;
+    margin-bottom: 10px;
+    text-shadow: 0px 1px 2px rgba(0,0,0,0.5);
+}
+
+/* Master-Sektion neu positioniert */
+.masterSection {
+    min-width: 120px;
+    width: 150px;
+    background: linear-gradient(to bottom, #2d3748, #1a202c);
+    border-radius: 5px;
+    border: 1px solid #2d3748;
+    box-shadow: var(--shadow-audio-channel);
+    padding: 10px;
+    margin-left: 15px; /* Abstand zu den Audiokanälen */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transform: translateZ(20px); /* Hervorgehobener 3D-Effekt */
+    position: sticky;
+    right: 0; /* Am rechten Rand fixiert */
+    align-self: flex-start;
+    height: calc(100% - 20px);
+}
+
+.masterTitle {
+    font-size: 1em;
+    font-weight: bold;
+    color: #e2e8f0;
+    text-align: center;
+    margin-bottom: 15px;
+    text-shadow: 0px 2px 3px rgba(0,0,0,0.6);
+    letter-spacing: 1px;
+}
+
+/* Verbesserte Master-Level-Anzeige */
+.masterLevels {
+    display: flex;
+    gap: 6px;
+    height: 200px; /* Höhere Level-Anzeige */
+    margin-bottom: 15px;
+}
+
+/* Verbesserte Fader für Master */
+.masterFaderContainer {
+    height: 250px; /* Höherer Fader */
+    position: relative;
+    margin: 10px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.masterFader {
+    z-index: 2;
+    position: relative;
+}
+
+.masterFaderTrack {
+    position: absolute;
+    bottom: 0;
+    width: 12px; /* Breiter als normale Fader */
+    background: linear-gradient(to top, #3b82f6, #1d4ed8);
+    border-radius: 6px;
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+    z-index: 1;
+}
+
+/* Responsives Layout für verschiedene Bildschirmgrößen */
+@media (max-width: 1200px) {
+    .mixerContainer {
+        flex-direction: column; /* Bei kleineren Bildschirmen untereinander */
+    }
+    
+    .masterSection {
+        width: 100%;
+        margin-left: 0;
+        margin-top: 15px;
+        min-height: 150px;
+        flex-direction: row; /* Master-Elemente nebeneinander */
+        justify-content: space-between;
+    }
+    
+    .channelsSection {
+        overflow-x: auto; /* Horizontales Scrollen auf kleinen Bildschirmen */
+    }
+    
+    .masterLevels {
+        height: 100px;
+        margin-right: 15px;
+    }
+    
+    .masterFaderContainer {
+        height: 120px;
+        flex: 1;
+    }
 }
