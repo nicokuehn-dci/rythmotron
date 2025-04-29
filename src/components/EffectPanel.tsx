@@ -31,7 +31,7 @@ interface OptionsProps {
   name: string;
   value: string[];
   selected: string;
-  onChange: () => void;
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
 }
 
 interface EffectPanelProps {
@@ -292,10 +292,12 @@ const EffectPanelBase: React.FC<EffectPanelProps> = ({
       {buttons && buttons.length > 0 && (
         <div className="grid grid-cols-2 gap-3">
           {buttons.map((button, index) => (
-            <Button
+            <Button 
+              variant={button.isActive ? "default" : "outline"}
+              size="sm"
+              onClick={() => button.onClick()}
               key={index}
               className="relative overflow-hidden"
-              onClick={button.onClick}
               style={{
                 background: button.isActive 
                   ? `linear-gradient(145deg, ${color}20, ${color}40)` 

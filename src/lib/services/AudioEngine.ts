@@ -13,6 +13,30 @@ interface AudioParams {
   time?: number;
 }
 
+interface EffectParams {
+  type: 'delay' | 'reverb' | 'distortion';
+  mix: number;  // 0-1 dry/wet mix
+  bypass: boolean;
+}
+
+interface DelayParams extends EffectParams {
+  time: number;       // Delay time in seconds
+  feedback: number;   // 0-1 feedback amount
+  filter: number;     // 0-1 lowpass filter cutoff
+}
+
+interface ReverbParams extends EffectParams {
+  size: number;       // 0-1 room size
+  damping: number;    // 0-1 high frequency damping
+  predelay: number;   // 0-0.1 predelay time in seconds
+}
+
+interface DistortionParams extends EffectParams {
+  drive: number;      // 0-1 distortion amount
+  tone: number;       // 0-1 tone control
+  character: 'soft' | 'hard' | 'fold';  // Distortion character
+}
+
 interface DrumSynthParams {
   time?: number;
   velocity?: number; // 0-1
@@ -50,6 +74,50 @@ class AudioEngine {
     compressor: null
   };
 
+  // Effect nodes
+  private delayNode: DelayNode | null = null;
+  private delayFeedback: GainNode | null = null;
+  private delayFilter: BiquadFilterNode | null = null;
+  private delayMix: GainNode | null = null;
+  
+  private reverbConvolver: ConvolverNode | null = null;
+  private reverbPredelay: DelayNode | null = null;
+  private reverbDamping: BiquadFilterNode | null = null;
+  private reverbMix: GainNode | null = null;
+  
+  private distortion: WaveShaperNode | null = null;
+  private distortionPreFilter: BiquadFilterNode | null = null;
+  private distortionPostFilter: BiquadFilterNode | null = null;
+  private distortionMix: GainNode | null = null;
+
+  // Effect parameters
+  private delayParams: DelayParams = {
+    type: 'delay',
+    mix: 0.3,
+    bypass: true,
+    time: 0.25,
+    feedback: 0.3,
+    filter: 0.7
+  };
+
+  private reverbParams: ReverbParams = {
+    type: 'reverb',
+    mix: 0.2,
+    bypass: true,
+    size: 0.5,
+    damping: 0.5,
+    predelay: 0.02
+  };
+
+  private distortionParams: DistortionParams = {
+    type: 'distortion',
+    mix: 0.2,
+    bypass: true,
+    drive: 0.5,
+    tone: 0.5,
+    character: 'soft'
+  };
+
   /**
    * Initialize the audio engine
    */
@@ -67,12 +135,49 @@ class AudioEngine {
       
       // Create sequencer output node - THIS IS THE FIRST NODE IN THE CHAIN
       this.routing.sequencerOutput = this.context.createGain();
-      this.routing.sequencerOutput.gain.value = 1.0; // Full volume from sequencer
+      this.routing.sequencerOutput.gain.value = 1.0;
+
+      // Initialize delay effect
+      this.delayNode = this.context.createDelay(2.0);
+      this.delayFeedback = this.context.createGain();
+      this.delayFilter = this.context.createBiquadFilter();
+      this.delayMix = this.context.createGain();
+      
+      // Initialize reverb
+      this.reverbConvolver = this.context.createConvolver();
+      this.reverbPredelay = this.context.createDelay(0.1);
+      this.reverbDamping = this.context.createBiquadFilter();
+      this.reverbMix = this.context.createGain();
+      
+      // Initialize distortion
+      this.distortion = this.context.createWaveShaper();
+      this.distortionPreFilter = this.context.createBiquadFilter();
+      this.distortionPostFilter = this.context.createBiquadFilter();
+      this.distortionMix = this.context.createGain();
+      
+      // Set up delay routing
+      this.routing.sequencerOutput.connect(this.delayFilter);
+      this.delayFilter.connect(this.delayNode);
+      this.delayNode.connect(this.delayFeedback);
+      this.delayFeedback.connect(this.delayNode);
+      this.delayNode.connect(this.delayMix);
+      
+      // Set up reverb routing
+      this.routing.sequencerOutput.connect(this.reverbPredelay);
+      this.reverbPredelay.connect(this.reverbConvolver);
+      this.reverbConvolver.connect(this.reverbDamping);
+      this.reverbDamping.connect(this.reverbMix);
+      
+      // Set up distortion routing
+      this.routing.sequencerOutput.connect(this.distortionPreFilter);
+      this.distortionPreFilter.connect(this.distortion);
+      this.distortion.connect(this.distortionPostFilter);
+      this.distortionPostFilter.connect(this.distortionMix);
       
       // Create master gain
       this.master = this.context.createGain();
       this.routing.master = this.master;
-      this.master.gain.value = 0.8; // Default volume
+      this.master.gain.value = 0.8;
       
       // Add a compressor for overall dynamics control
       this.compressor = this.context.createDynamicsCompressor();
@@ -84,13 +189,19 @@ class AudioEngine {
       this.compressor.release.value = 0.25;
       
       // Connect nodes in proper order:
-      // sequencerOutput -> master -> compressor -> destination
+      // sequencerOutput -> effects -> master -> compressor -> destination
       this.routing.sequencerOutput.connect(this.master);
+      this.delayMix.connect(this.master);
+      this.reverbMix.connect(this.master);
+      this.distortionMix.connect(this.master);
       this.master.connect(this.compressor);
       this.compressor.connect(this.context.destination);
       
+      // Initialize effect parameters
+      this.updateEffectParameters();
+      
       this._isInitialized = true;
-      console.log('AudioEngine initialized with sequencer as first node in chain:', this.context);
+      console.log('AudioEngine initialized with effects chain:', this.context);
       
       // Preload samples
       await this.preloadSamples();
@@ -928,6 +1039,147 @@ class AudioEngine {
     // Start und Stop
     noise.start(time);
     noise.stop(time + decayTime + 0.05);
+  }
+
+  /**
+   * Update all effect parameters
+   */
+  private updateEffectParameters(): void {
+    if (!this.context) return;
+    
+    this.updateDelayParameters();
+    this.updateReverbParameters();
+    this.updateDistortionParameters();
+  }
+
+  /**
+   * Update delay effect parameters
+   */
+  private updateDelayParameters(): void {
+    if (!this.delayNode || !this.delayFeedback || !this.delayFilter || !this.delayMix) return;
+
+    const params = this.delayParams;
+    this.delayNode.delayTime.value = params.time;
+    this.delayFeedback.gain.value = params.feedback;
+    this.delayFilter.frequency.value = 200 + params.filter * 15000;
+    this.delayMix.gain.value = params.bypass ? 0 : params.mix;
+  }
+
+  /**
+   * Update reverb effect parameters
+   */
+  private updateReverbParameters(): void {
+    if (!this.reverbConvolver || !this.reverbPredelay || !this.reverbDamping || !this.reverbMix) return;
+
+    const params = this.reverbParams;
+    this.reverbPredelay.delayTime.value = params.predelay;
+    this.reverbDamping.frequency.value = 1000 + params.damping * 18000;
+    this.reverbMix.gain.value = params.bypass ? 0 : params.mix;
+    
+    // Generate new impulse response based on size parameter
+    this.generateReverbImpulse(params.size);
+  }
+
+  /**
+   * Update distortion effect parameters
+   */
+  private updateDistortionParameters(): void {
+    if (!this.distortion || !this.distortionPreFilter || !this.distortionPostFilter || !this.distortionMix) return;
+
+    const params = this.distortionParams;
+    this.distortionPreFilter.frequency.value = 20 + params.tone * 19980;
+    this.distortionPostFilter.frequency.value = 200 + params.tone * 10000;
+    this.distortionMix.gain.value = params.bypass ? 0 : params.mix;
+
+    // Update distortion curve based on character and drive
+    this.updateDistortionCurve(params.character, params.drive);
+  }
+
+  /**
+   * Generate reverb impulse response
+   */
+  private generateReverbImpulse(size: number): void {
+    if (!this.context || !this.reverbConvolver) return;
+
+    const sampleRate = this.context.sampleRate;
+    const length = Math.floor(size * 2 * sampleRate); // 0.1 to 2 seconds
+    const decay = size * 2;
+    
+    const impulse = this.context.createBuffer(2, length, sampleRate);
+    const leftChannel = impulse.getChannelData(0);
+    const rightChannel = impulse.getChannelData(1);
+
+    for (let i = 0; i < length; i++) {
+      const t = i / sampleRate;
+      const amplitude = Math.exp(-t / decay) * (1 - t / (length / sampleRate));
+      
+      // Add some randomness and stereo width
+      leftChannel[i] = (Math.random() * 2 - 1) * amplitude;
+      rightChannel[i] = (Math.random() * 2 - 1) * amplitude;
+    }
+
+    this.reverbConvolver.buffer = impulse;
+  }
+
+  /**
+   * Update distortion curve based on character and drive
+   */
+  private updateDistortionCurve(character: 'soft' | 'hard' | 'fold', drive: number): void {
+    if (!this.context || !this.distortion) return;
+
+    const samples = 44100;
+    const curve = new Float32Array(samples);
+    const amount = 1 + drive * 100;
+
+    for (let i = 0; i < samples; i++) {
+      const x = (i * 2) / samples - 1;
+      let y = x;
+
+      switch (character) {
+        case 'soft':
+          // Smooth saturation curve
+          y = Math.tanh(x * amount);
+          break;
+        
+        case 'hard':
+          // Hard clipping
+          y = Math.max(-1, Math.min(1, x * amount));
+          break;
+        
+        case 'fold':
+          // Wavefolding distortion
+          y = Math.sin(x * amount * Math.PI / 2);
+          break;
+      }
+
+      curve[i] = y;
+    }
+
+    this.distortion.curve = curve;
+  }
+
+  /**
+   * Set delay parameters
+   */
+  setDelayParams(params: Partial<DelayParams>): void {
+    this.delayParams = { ...this.delayParams, ...params };
+    this.updateDelayParameters();
+  }
+
+  /**
+   * Set reverb parameters
+   */
+  setReverbParams(params: Partial<ReverbParams>): void {
+    this.reverbParams = { ...this.reverbParams, ...params };
+    this.updateReverbParameters();
+  }
+
+  /**
+   * Set distortion parameters
+   */
+  setDistortionParams(params: Partial<DistortionParams>): void {
+    this.distortionParams = { ...this.distortionParams, ...params };
+    this.updateDistortionParameters();
   }
 }
 
